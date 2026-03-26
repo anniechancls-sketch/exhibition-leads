@@ -977,35 +977,110 @@ function submitToPardot() {
   
   const record = state.currentFormRecord;
   
-  // 构建简单表单（标准 HTML 格式）
+  // 构建带 iframe 的确认页面
   const formHtml = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Pardot 提交确认</title>
+  <title>Pardot 提交</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
-    h2 { color: #1a56db; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    td { padding: 8px; border: 1px solid #ddd; }
-    .label { font-weight: bold; width: 100px; background: #f9fafb; }
-    input[type="text"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-    .submit-btn { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    .submit-btn:hover { background: #1d4ed8; }
+    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: #2563eb; color: white; padding: 15px 20px; }
+    .header h2 { margin: 0; font-size: 18px; }
+    .content { padding: 20px; }
+    .status { color: #666; margin-bottom: 15px; }
+    .status.loading { color: #2563eb; }
+    .status.success { color: #16a34a; }
+    .status.error { color: #dc2626; }
+    iframe { width: 100%; height: 400px; border: none; }
+    .info { background: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .info h3 { margin: 0 0 10px 0; font-size: 14px; color: #1e40af; }
+    .info p { margin: 5px 0; font-size: 13px; color: #1e40af; }
   </style>
 </head>
 <body>
-  <h2>📋 请确认并提交</h2>
-  <form action="${CONFIG.PARDOT_URL}" method="post">
-    <table>
-${CONFIG.FIELDS.map(f => {
-  const val = (record[f] || '').trim();
-  return `      <tr><td class="label">${f}:</td><td><input type="text" name="${f}" value="${(val || '').replace(/"/g, '&quot;')}"></td></tr>`;
-}).join('\n')}
-    </table>
-    <button type="submit" class="submit-btn">✅ 确认提交到 Pardot</button>
-  </form>
+  <div class="container">
+    <div class="header">
+      <h2>📋 正在填充 Pardot 表单...</h2>
+    </div>
+    <div class="content">
+      <div class="info">
+        <h3>提交信息确认：</h3>
+        <p><strong>Email:</strong> ${(record.email || '').replace(/</g, '&lt;')}</p>
+        <p><strong>公司:</strong> ${(record.Company || '').replace(/</g, '&lt;')}</p>
+        <p><strong>姓名:</strong> ${(record.Name || '').replace(/</g, '&lt;')}</p>
+      </div>
+      <p class="status loading" id="status">⏳ 等待表单加载...</p>
+      <iframe id="pardot-form" src="https://go.rifeng.com/l/900071/2026-03-26/3tbjg2" frameborder="0"></iframe>
+    </div>
+  </div>
+  <script>
+    const formData = ${JSON.stringify(record)};
+    
+    document.getElementById('pardot-form').onload = function() {
+      setTimeout(fillAndSubmit, 1000);
+    };
+    
+    function fillAndSubmit() {
+      const iframe = document.getElementById('pardot-form');
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const status = document.getElementById('status');
+      
+      try {
+        // 填充字段
+        const fieldMap = {
+          'email': 'email',
+          'Name': 'name',
+          'Title': 'title',
+          'Company': 'company',
+          'Website': 'website',
+          'Address': 'address',
+          'Phone': 'phone',
+          'Mobile': 'mobile'
+        };
+        
+        let filled = 0;
+        for (const [key, value] of Object.entries(formData)) {
+          if (value && value.trim()) {
+            // 尝试多种可能的字段名
+            const possibleNames = [key.toLowerCase(), key, fieldMap[key], fieldMap[key.toLowerCase()]];
+            for (const fieldName of possibleNames) {
+              if (!fieldName) continue;
+              const input = doc.querySelector('input[name="' + fieldName + '"], textarea[name="' + fieldName + '"]');
+              if (input) {
+                input.value = value.trim();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                filled++;
+                break;
+              }
+            }
+          }
+        }
+        
+        status.textContent = '✅ 已填充 ' + filled + ' 个字段，表单已准备好提交';
+        status.className = 'status success';
+        
+        // 尝试自动提交（如果 Pardot 表单支持）
+        const form = doc.querySelector('form');
+        if (form) {
+          // 3秒后自动提交（给用户时间查看）
+          setTimeout(() => {
+            const submitBtn = doc.querySelector('button[type="submit"], input[type="submit"]');
+            if (submitBtn) {
+              status.textContent = '⏳ 正在提交...';
+              submitBtn.click();
+            }
+          }, 2000);
+        }
+      } catch(e) {
+        status.textContent = '⚠️ 填充完成，请在表单中检查并手动提交';
+        status.className = 'status error';
+      }
+    }
+  </script>
 </body>
 </html>`;
   
@@ -1051,28 +1126,80 @@ function submitAllToPardot() {
   <meta charset="UTF-8">
   <title>提交 ${idx}/${count}</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
-    h2 { color: #1a56db; }
-    .counter { background: #e0e7ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-    td { padding: 8px; border: 1px solid #ddd; }
-    .label { font-weight: bold; width: 100px; background: #f9fafb; }
-    input[type="text"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-    .submit-btn { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    .submit-btn:hover { background: #1d4ed8; }
+    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: #2563eb; color: white; padding: 15px 20px; }
+    .header h2 { margin: 0; font-size: 18px; }
+    .content { padding: 20px; }
+    .counter { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 14px; margin-left: 10px; }
+    .status { color: #666; margin-bottom: 15px; }
+    .status.loading { color: #2563eb; }
+    .status.success { color: #16a34a; }
+    iframe { width: 100%; height: 400px; border: none; }
+    .info { background: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .info h3 { margin: 0 0 10px 0; font-size: 14px; color: #1e40af; }
+    .info p { margin: 5px 0; font-size: 13px; color: #1e40af; }
   </style>
 </head>
 <body>
-  <h2>📋 <span class="counter">${idx} / ${count}</span> ${name}</h2>
-  <form action="${CONFIG.PARDOT_URL}" method="post">
-    <table>
-${CONFIG.FIELDS.map(f => {
-  const val = (record[f] || '').trim();
-  return `      <tr><td class="label">${f}:</td><td><input type="text" name="${f}" value="${(val || '').replace(/"/g, '&quot;')}"></td></tr>`;
-}).join('\n')}
-    </table>
-    <button type="submit" class="submit-btn">✅ 确认提交</button>
-  </form>
+  <div class="container">
+    <div class="header">
+      <h2>📋 <span class="counter">${idx} / ${count}</span> ${name}</h2>
+    </div>
+    <div class="content">
+      <div class="info">
+        <h3>提交信息：</h3>
+        <p><strong>Email:</strong> ${(record.email || '').replace(/</g, '&lt;')}</p>
+        <p><strong>公司:</strong> ${(record.Company || '').replace(/</g, '&lt;')}</p>
+      </div>
+      <p class="status loading" id="status">⏳ 等待表单加载...</p>
+      <iframe id="pardot-form" src="https://go.rifeng.com/l/900071/2026-03-26/3tbjg2" frameborder="0"></iframe>
+    </div>
+  </div>
+  <script>
+    const formData = ${JSON.stringify(record)};
+    
+    document.getElementById('pardot-form').onload = function() {
+      setTimeout(fillAndSubmit, 1000);
+    };
+    
+    function fillAndSubmit() {
+      const iframe = document.getElementById('pardot-form');
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const status = document.getElementById('status');
+      
+      try {
+        let filled = 0;
+        for (const [key, value] of Object.entries(formData)) {
+          if (value && value.trim()) {
+            const possibleNames = [key.toLowerCase(), key, key.toLowerCase().replace(' ', '_')];
+            for (const fieldName of possibleNames) {
+              const input = doc.querySelector('input[name="' + fieldName + '"], textarea[name="' + fieldName + '"]');
+              if (input) {
+                input.value = value.trim();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                filled++;
+                break;
+              }
+            }
+          }
+        }
+        
+        status.textContent = '✅ 已填充 ' + filled + ' 个字段';
+        status.className = 'status success';
+        
+        setTimeout(() => {
+          const submitBtn = doc.querySelector('button[type="submit"], input[type="submit"]');
+          if (submitBtn) {
+            submitBtn.click();
+          }
+        }, 1500);
+      } catch(e) {
+        status.textContent = '⚠️ 请手动填写并提交';
+        status.className = 'status';
+      }
+    }
+  </script>
 </body>
 </html>`;
       
@@ -1082,7 +1209,7 @@ ${CONFIG.FIELDS.map(f => {
       
       if (i === count - 1) {
         setTimeout(() => {
-          alert(`已打开全部 ${count} 个提交页面！\n\n请逐个点击确认提交。`);
+          alert(`已打开全部 ${count} 个提交页面！\n\n请逐个检查并提交。`);
         }, 500);
       }
     }, i * 1000);
