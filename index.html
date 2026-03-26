@@ -975,16 +975,23 @@ async function submitToPardot() {
   
   if (!confirm(confirmMsg)) return;
   
-  // 构建完整提交 URL（Pardot 支持直接接收参数）
+  // 手动构建 URL 参数（不编码 @ 符号）
   const record = state.currentFormRecord;
-  const params = new URLSearchParams();
-  CONFIG.FIELDS.forEach(f => {
+  const params = CONFIG.FIELDS.map(f => {
     const val = (record[f] || '').trim();
-    if (val) params.append(f, val);
-  });
+    if (!val) return null;
+    // 只编码空格和特殊字符，但保留 @ 和 . 
+    const encoded = encodeURIComponent(val)
+      .replace(/%40/g, '@')    // 还原 @
+      .replace(/%2E/g, '.')    // 还原 .
+      .replace(/%2D/g, '-')    // 还原 -
+      .replace(/%5F/g, '_');   // 还原 _
+    return f + '=' + encoded;
+  }).filter(Boolean).join('&');
   
-  // 直接在新窗口打开 Pardot URL（GET 方式，浏览器会自动处理跳转）
-  const submitUrl = CONFIG.PARDOT_URL + '?' + params.toString();
+  // 直接在新窗口打开 Pardot URL
+  const submitUrl = CONFIG.PARDOT_URL + '?' + params;
+  console.log('Submit URL:', submitUrl);
   window.open(submitUrl, '_blank');
   
   alert('✅ 已在新窗口提交到 Pardot！\n\n请在新窗口中确认提交成功后关闭。');
@@ -1016,12 +1023,19 @@ async function submitAllToPardot() {
   
   state.records.forEach((record, i) => {
     setTimeout(() => {
-      const params = new URLSearchParams();
-      CONFIG.FIELDS.forEach(f => {
+      // 手动构建参数（不编码 @）
+      const params = CONFIG.FIELDS.map(f => {
         const val = (record[f] || '').trim();
-        if (val) params.append(f, val);
-      });
-      const submitUrl = CONFIG.PARDOT_URL + '?' + params.toString();
+        if (!val) return null;
+        const encoded = encodeURIComponent(val)
+          .replace(/%40/g, '@')
+          .replace(/%2E/g, '.')
+          .replace(/%2D/g, '-')
+          .replace(/%5F/g, '_');
+        return f + '=' + encoded;
+      }).filter(Boolean).join('&');
+      
+      const submitUrl = CONFIG.PARDOT_URL + '?' + params;
       window.open(submitUrl, '_blank');
       
       if (i === count - 1) {
