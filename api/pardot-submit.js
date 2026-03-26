@@ -12,19 +12,41 @@ export default async function handler(req, res) {
     let body = '';
     for await (const chunk of req) body += chunk;
     
+    console.log('=== Pardot Submit ===');
+    console.log('Body:', body);
+    
     const response = await fetch(PARDOT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'ExhibitionLeadsTool/1.0' },
-      body: body
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (compatible; ExhibitionLeadsTool/1.0)'
+      },
+      body: body,
+      redirect: 'manual'
     });
     
     const responseText = await response.text();
+    const statusCode = response.status;
+    
+    console.log('Pardot Status:', statusCode);
+    console.log('Pardot Response:', responseText);
+    
+    // 提取 email
     let submittedEmail = '';
     const emailMatch = body.match(/email=([^&]+)/);
     if (emailMatch) submittedEmail = decodeURIComponent(emailMatch[1]);
     
-    res.status(200).json({ success: response.status === 200, status: response.status, submitted_email: submittedEmail });
+    // 返回详细响应
+    res.status(200).json({
+      success: statusCode === 200 || statusCode === 302,
+      status: statusCode,
+      submitted_email: submittedEmail,
+      pardot_response: responseText.substring(0, 500),
+      body_sent: body.substring(0, 300)
+    });
+    
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 }
