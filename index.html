@@ -3,22 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>展会客户信息识别与整理</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    
-    /* 企业微信适配 */
     .wx-work { height: 100vh; overflow-y: auto; overscroll-behavior: contain; }
     .wx-work::-webkit-scrollbar { width: 0; height: 0; }
-    
     .upload-zone { border: 2px dashed #cbd5e1; transition: all 0.2s; }
     .upload-zone.drag { border-color: #3b82f6; background: #eff6ff; }
     .upload-zone:active { transform: scale(0.98); }
-    
     .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; transition: all 0.2s; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
     .btn:active { transform: scale(0.98); }
     .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
@@ -27,41 +23,30 @@
     .btn-secondary { background: #f1f5f9; color: #475569; }
     .btn-danger { background: #fee2e2; color: #dc2626; }
     .btn-sm { padding: 0.5rem 0.75rem; min-height: 36px; font-size: 0.875rem; }
-    
     .input { width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem; background: #fff; }
     .input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-    
     .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
-    
     .badge { display: inline-flex; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
     .badge-blue { background: #dbeafe; color: #1e40af; }
     .badge-green { background: #dcfce7; color: #166534; }
-    .badge-amber { background: #fef3c7; color: #92400e; }
-    
     .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .preview-item { position: relative; aspect-ratio: 1; }
     .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e2e8f0; }
-    
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
     .modal { background: white; width: 100%; max-height: 90vh; border-radius: 1rem 1rem 0 0; overflow: hidden; display: flex; flex-direction: column; }
     .modal-header { padding: 1rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
     .modal-body { flex: 1; overflow-y: auto; padding: 1rem; }
     .modal-footer { padding: 1rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.75rem; }
-    
     .tab { flex: 1; padding: 0.75rem; text-align: center; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; }
     .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-    
     .field-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; }
     .field-value { font-weight: 500; }
-    
     pre { white-space: pre-wrap; word-wrap: break-word; font-size: 0.75rem; }
-    
     .stat-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; }
   </style>
 </head>
 <body class="bg-slate-50">
   <div id="app" class="wx-work">
-    <!-- Header -->
     <header class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 sticky top-0 z-20">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">📇</div>
@@ -70,26 +55,17 @@
           <p class="text-blue-100 text-xs">Exhibition Lead Recognition</p>
         </div>
       </div>
-      
-      <!-- 企业微信身份预留 -->
-      <div id="wx-user" class="hidden mt-2 text-xs text-blue-200"></div>
-      
-      <!-- 设置按钮 -->
       <button onclick="openSettings()" class="absolute top-4 right-4 w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-lg hover:bg-white/30 transition">⚙️</button>
     </header>
 
-    <!-- Tabs -->
     <nav class="bg-white flex sticky top-[72px] z-20 shadow-sm">
       <button class="tab active" data-tab="upload">📤 上传</button>
       <button class="tab" data-tab="records">📋 记录</button>
       <button class="tab" data-tab="export">📥 导出</button>
     </nav>
 
-    <!-- Pages -->
     <main class="pb-24">
-      <!-- 上传页面 -->
       <section id="page-upload" class="p-4 space-y-4">
-        <!-- 上传区域 -->
         <div id="drop-zone" class="upload-zone rounded-2xl p-8 text-center cursor-pointer bg-white">
           <div class="text-5xl mb-3">📸</div>
           <p class="text-slate-600 font-medium">点击上传 / 拖拽图片</p>
@@ -98,21 +74,13 @@
           <input type="file" id="file-input" accept="image/*" multiple class="hidden">
         </div>
 
-        <!-- 按钮组 -->
         <div class="flex gap-2">
-          <button id="btn-camera" class="btn btn-primary flex-1">
-            📷 拍照上传
-          </button>
+          <button id="btn-camera" class="btn btn-primary flex-1">📷 拍照上传</button>
           <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
-          <button id="btn-gallery" class="btn btn-secondary flex-1">
-            🖼️ 相册选择
-          </button>
-          <button id="btn-clear-all" class="btn btn-secondary hidden" onclick="clearAll()">
-            🗑️
-          </button>
+          <button id="btn-gallery" class="btn btn-secondary flex-1">🖼️ 相册选择</button>
+          <button id="btn-clear-all" class="btn btn-secondary hidden" onclick="clearAll()">🗑️</button>
         </div>
 
-        <!-- 预览 -->
         <div id="preview-section" class="hidden">
           <div class="card p-4">
             <div class="flex justify-between items-center mb-3">
@@ -122,43 +90,34 @@
           </div>
         </div>
 
-        <!-- 开始识别 -->
-        <button id="btn-recognize" class="btn btn-primary w-full text-lg hidden" onclick="startRecognize()">
-          🧠 开始识别客户信息
-        </button>
+        <button id="btn-recognize" class="btn btn-primary w-full text-lg hidden" onclick="startRecognize()">🧠 开始识别客户信息</button>
 
-        <!-- 说明 -->
         <div class="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
           <h3 class="font-semibold mb-2">💡 使用说明</h3>
           <ul class="space-y-1 text-blue-700">
-            <li>• 上传名片、Memo 或客户登记表照片</li>
-            <li>• 系统自动识别客户信息</li>
-            <li>• 支持手动校正识别结果</li>
-            <li>• 导出 Excel 或生成 Form 数据</li>
+            <li>① 上传名片、Memo 或客户登记表照片</li>
+            <li>② 系统自动识别客户信息</li>
+            <li>③ 支持手动校正识别结果</li>
+            <li>④ 导出 Excel 或提交到 Pardot</li>
           </ul>
         </div>
       </section>
 
-      <!-- 记录页面 -->
       <section id="page-records" class="p-4 space-y-4 hidden">
         <div id="records-empty" class="text-center py-16">
           <div class="text-6xl mb-4">📋</div>
           <p class="text-slate-500">暂无识别记录</p>
           <button class="btn btn-primary mt-4" onclick="switchTab('upload')">去上传图片</button>
         </div>
-        
         <div id="records-list" class="space-y-4 hidden"></div>
       </section>
 
-      <!-- 导出页面 -->
       <section id="page-export" class="p-4 space-y-4 hidden">
         <div id="export-empty" class="text-center py-16">
           <div class="text-6xl mb-4">📥</div>
           <p class="text-slate-500">暂无数据可导出</p>
         </div>
-        
         <div id="export-panel" class="hidden space-y-4">
-          <!-- 操作按钮 -->
           <div class="grid grid-cols-2 gap-3">
             <button class="btn btn-primary flex-col py-6" onclick="doExportExcel()">
               <span class="text-2xl">📊</span>
@@ -169,27 +128,15 @@
               <span class="text-sm mt-1">Form 数据</span>
             </button>
           </div>
-
-          <!-- 统计 -->
           <div class="card p-4">
             <h3 class="font-semibold text-slate-700 mb-3">📊 数据统计</h3>
             <div id="stats-list"></div>
           </div>
-
-          <!-- JSON 预览 -->
           <button class="btn btn-secondary w-full" onclick="showJson()">📄 查看 JSON 数据</button>
-
-          <!-- 提交说明 -->
-          <div class="bg-green-50 rounded-xl p-4 text-sm">
-            <h3 class="font-semibold text-green-800 mb-2">📮 Pardot 提交</h3>
-            <p class="text-green-700">数据确认无误后，可在记录页面生成 Form 提交数据。</p>
-            <p class="text-green-600 text-xs mt-1">提交前请仔细核对信息准确性。</p>
-          </div>
         </div>
       </section>
     </main>
 
-    <!-- Loading -->
     <div id="loading" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden">
       <div class="bg-white rounded-2xl p-8 text-center max-w-xs">
         <div class="text-5xl mb-4">🧠</div>
@@ -201,7 +148,6 @@
       </div>
     </div>
 
-    <!-- 设置 Modal -->
     <div id="settings-modal" class="modal-overlay hidden">
       <div class="modal">
         <div class="modal-header">
@@ -210,35 +156,27 @@
         </div>
         <div class="modal-body space-y-4">
           <div class="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
-            💡 推荐模型：<strong>google/gemini-2.0-flash-001</strong>（便宜快速）或 <strong>anthropic/claude-sonnet-4</strong>（高精度）
+            💡 推荐模型：<strong>google/gemini-2.0-flash-001</strong>（便宜快速）
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">🔑 API Key</label>
             <input type="password" id="input-api-key" class="input" placeholder="sk-or-v1-..." autocomplete="off">
-            <p class="text-xs text-slate-400 mt-1">从 openrouter.ai/keys 获取，保存在浏览器本地</p>
+            <p class="text-xs text-slate-400 mt-1">在 openrouter.ai/keys 获取</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">🤖 模型</label>
             <select id="input-model" class="input">
-              <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash（推荐·便宜快速）</option>
-              <option value="anthropic/claude-sonnet-4">Claude Sonnet 4（高精度）</option>
+              <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash（推荐）</option>
+              <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
               <option value="openai/gpt-4o">GPT-4o</option>
-              <option value="openai/gpt-4o-mini">GPT-4o Mini（低成本）</option>
-              <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-              <option value="google/gemini-2.5-flash-preview">Gemini 2.5 Flash</option>
-              <option value="meta-llama/llama-3.2-11b-vision-instruct">Llama 3.2 Vision</option>
-              <option value="qwen/qwen-2.5-vl-72b-instruct">Qwen 2.5 VL 72B</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">🔄 识别模式</label>
             <select id="input-mode" class="input">
+              <option value="mock">Mock 模拟数据</option>
               <option value="real">真实模型识别</option>
-              <option value="mock">Mock 模拟数据（测试用）</option>
             </select>
-          </div>
-          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-            ⚠️ API Key 仅保存在浏览器 localStorage 中，不会上传到任何服务器。
           </div>
         </div>
         <div class="modal-footer">
@@ -248,7 +186,6 @@
       </div>
     </div>
 
-    <!-- 编辑记录 Modal -->
     <div id="edit-modal" class="modal-overlay hidden">
       <div class="modal">
         <div class="modal-header">
@@ -263,7 +200,6 @@
       </div>
     </div>
 
-    <!-- Form 数据 Modal -->
     <div id="form-modal" class="modal-overlay hidden">
       <div class="modal">
         <div class="modal-header">
@@ -272,16 +208,12 @@
         </div>
         <div class="modal-body">
           <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
-            ⚠️ 仅供预览确认，未经用户确认不会自动提交到 Pardot
-          </div>
-          <div class="text-xs text-slate-500 mb-3">
-            <div><strong>提交地址：</strong><br><span class="text-blue-600 break-all">https://go.rifeng.com/l/900071/2026-03-18/3t99mv</span></div>
-            <div class="mt-1"><strong>编码格式：</strong> application/x-www-form-urlencoded</div>
+            ⚠️ 点击下方按钮打开 Pardot 表单页面
           </div>
           <div id="form-data-content"></div>
         </div>
         <div class="modal-footer flex-col gap-2">
-          <button class="btn btn-primary w-full text-base py-4" onclick="submitToPardot()">📮 确认提交到 Pardot</button>
+          <button class="btn btn-primary w-full text-base py-4" onclick="submitToPardot()">📮 打开 Pardot 表单</button>
           <div class="flex gap-3 w-full">
             <button class="btn btn-secondary flex-1" onclick="copyFormData()">📋 复制数据</button>
             <button class="btn btn-secondary flex-1" onclick="closeFormModal()">关闭</button>
@@ -290,10 +222,6 @@
       </div>
     </div>
 
-    <!-- 隐藏表单用于提交（POST 方式） -->
-    <form id="pardot-form" method="POST" action="https://go.rifeng.com/l/900071/2026-03-18/3t99mv" style="display:none"></form>
-
-    <!-- JSON Modal -->
     <div id="json-modal" class="modal-overlay hidden">
       <div class="modal">
         <div class="modal-header">
@@ -312,44 +240,19 @@
   </div>
 
 <script>
-// ====== 配置 ======
-const CONFIG = {
-  PARDOT_URL: 'https://go.rifeng.com/l/900071/2026-03-18/3t99mv',
-  FIELDS: [
-    'Name', 'Title', 'email', 'Website', 'Address', 'Company',
-    'Continent', 'Nation', 'Phone', 'Mobile', 'TypeOfClients',
-    'InterestedIn', 'DemandDetails', 'salesman'
-  ],
-  FIELD_LABELS: {
-    Name: '姓名', Title: '职位', email: '邮箱', Website: '网站',
-    Address: '地址', Company: '公司', Continent: '洲别', Nation: '国家',
-    Phone: '固话', Mobile: '手机', TypeOfClients: '客户类型',
-    InterestedIn: '感兴趣产品', DemandDetails: '需求详情', salesman: '业务员 ⭐'
-  }
+var CONFIG = {
+  PARDOT_URL: 'https://go.rifeng.com/l/900071/2026-03-26/3tbjg2',
+  FIELDS: ['Name', 'Title', 'email', 'Website', 'Address', 'Company', 'Continent', 'Nation', 'Phone', 'Mobile', 'TypeOfClients', 'InterestedIn', 'DemandDetails', 'salesman'],
+  FIELD_LABELS: { Name: '姓名', Title: '职位', email: '邮箱', Website: '网站', Address: '地址', Company: '公司', Continent: '洲别', Nation: '国家', Phone: '固话', Mobile: '手机', TypeOfClients: '客户类型', InterestedIn: '感兴趣产品', DemandDetails: '需求详情', salesman: '业务员' }
 };
 
-// ====== 状态 ======
-let state = {
-  images: [],
-  records: [],
-  currentEditId: null,
-  currentFormRecord: null
-};
-
-// ====== 模型设置 ======
-let modelConfig = {
-  apiKey: '',
-  model: 'google/gemini-2.0-flash-001',
-  mode: 'mock'
-};
+var state = { images: [], records: [], currentEditId: null, currentFormRecord: null };
+var modelConfig = { apiKey: '', model: 'google/gemini-2.0-flash-001', mode: 'mock' };
 
 function loadSettings() {
   try {
-    const saved = localStorage.getItem('exhibition_leads_settings');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      modelConfig = { ...modelConfig, ...parsed };
-    }
+    var saved = localStorage.getItem('exhibition_leads_settings');
+    if (saved) { var parsed = JSON.parse(saved); for (var k in parsed) modelConfig[k] = parsed[k]; }
   } catch(e) {}
 }
 
@@ -367,7 +270,7 @@ function saveSettings() {
   modelConfig.mode = document.getElementById('input-mode').value;
   localStorage.setItem('exhibition_leads_settings', JSON.stringify(modelConfig));
   closeSettings();
-  alert('✅ 设置已保存');
+  alert('设置已保存');
 }
 
 function clearSettings() {
@@ -380,18 +283,9 @@ function clearSettings() {
   alert('设置已清除');
 }
 
-function closeSettings() {
-  document.getElementById('settings-modal').classList.add('hidden');
-}
-
-function isRealMode() {
-  return modelConfig.mode === 'real' && modelConfig.apiKey;
-}
-
-// ====== 工具函数 ======
-function genId() {
-  return 'r_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
+function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+function isRealMode() { return modelConfig.mode === 'real' && modelConfig.apiKey; }
+function genId() { return 'r_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
 
 function escapeHtml(str) {
   if (str == null) return '';
@@ -403,299 +297,160 @@ function escapeAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// ====== 标签页切换 ======
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === tab);
-  });
-  document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
+  document.querySelectorAll('section').forEach(function(s) { s.classList.add('hidden'); });
   document.getElementById('page-' + tab).classList.remove('hidden');
-  
   if (tab === 'records') renderRecords();
   if (tab === 'export') renderExport();
 }
 
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() { switchTab(tab.dataset.tab); });
 });
 
-// ====== 图片上传 ======
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-const cameraInput = document.getElementById('camera-input');
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
+var cameraInput = document.getElementById('camera-input');
 
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag');
-  handleFiles(e.dataTransfer.files);
-});
-
-fileInput.addEventListener('change', e => handleFiles(e.target.files));
-document.getElementById('btn-camera').addEventListener('click', () => cameraInput.click());
-cameraInput.addEventListener('change', e => handleFiles(e.target.files));
-document.getElementById('btn-gallery').addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('drag'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', function(e) { handleFiles(e.target.files); });
+document.getElementById('btn-camera').addEventListener('click', function() { cameraInput.click(); });
+cameraInput.addEventListener('change', function(e) { handleFiles(e.target.files); });
+document.getElementById('btn-gallery').addEventListener('click', function() { fileInput.click(); });
 
 function handleFiles(files) {
-  Array.from(files).forEach(file => {
+  Array.from(files).forEach(function(file) {
     if (!file.type.startsWith('image/')) return;
-    const id = genId();
-    const url = URL.createObjectURL(file);
-    state.images.push({ id, file, url });
+    var id = genId();
+    var url = URL.createObjectURL(file);
+    state.images.push({ id: id, file: file, url: url });
   });
   updatePreview();
 }
 
 function removeImage(id) {
-  const img = state.images.find(i => i.id === id);
+  var img = state.images.find(function(i) { return i.id === id; });
   if (img) URL.revokeObjectURL(img.url);
-  state.images = state.images.filter(i => i.id !== id);
+  state.images = state.images.filter(function(i) { return i.id !== id; });
   updatePreview();
 }
 
 function clearAll() {
-  state.images.forEach(i => URL.revokeObjectURL(i.url));
+  state.images.forEach(function(i) { URL.revokeObjectURL(i.url); });
   state.images = [];
   updatePreview();
 }
 
 function updatePreview() {
-  const count = state.images.length;
+  var count = state.images.length;
   document.getElementById('preview-section').classList.toggle('hidden', count === 0);
   document.getElementById('btn-recognize').classList.toggle('hidden', count === 0);
   document.getElementById('btn-clear-all').classList.toggle('hidden', count === 0);
   document.getElementById('img-count').textContent = count;
-  
-  const grid = document.getElementById('preview-grid');
-  grid.innerHTML = state.images.map((img, i) => `
-    <div class="preview-item">
-      <img src="${img.url}" alt="图片${i + 1}">
-      <button onclick="removeImage('${img.id}')" 
-              class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">×</button>
-      <span class="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 rounded">${i + 1}</span>
-    </div>
-  `).join('');
+  var grid = document.getElementById('preview-grid');
+  grid.innerHTML = state.images.map(function(img, i) {
+    return '<div class="preview-item"><img src="' + img.url + '" alt="图片' + (i + 1) + '"><button onclick="removeImage(\'' + img.id + '\')" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">×</button><span class="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 rounded">' + (i + 1) + '</span></div>';
+  }).join('');
 }
 
-// ====== 多模态识别 ======
+var RECOGNITION_PROMPT = '你是一个专业的展会客户信息识别助手。请仔细分析上传的图片，识别其中的客户信息。\n【任务】从名片、展会Memo、客户登记表等图片中提取结构化客户信息。\n【字段定义】\n- Name: 联系人姓名\n- Title: 职位\n- email: 标准邮箱格式\n- Website: 公司官网\n- Address: 地址信息\n- Company: 公司名称\n- Continent: 洲别\n- Nation: 国家英文名称\n- Phone: 固定电话\n- Mobile: 手机号\n- TypeOfClients: 客户类型\n- InterestedIn: 感兴趣的产品\n- DemandDetails: 详细需求\n- salesman: 业务员姓名（仅从 Filled by 字段提取）\n\n【严格规则】\n1. 只提取图片中真实可见的信息，不得猜测\n2. 如无法确认某字段，必须返回空字符串\n3. salesman 只能来自图片中明确出现的 Filled by 字段\n4. 返回严格 JSON 数组格式';
 
-// ---- 系统提示词 ----
-const RECOGNITION_PROMPT = `你是一个专业的展会客户信息识别助手。请仔细分析上传的图片，识别其中的客户信息。
-
-【任务】
-从名片、展会Memo、客户登记表等图片中提取结构化客户信息。一张图片可能对应一个或多个客户。
-
-【字段定义】
-- Name: 联系人姓名
-- Title: 职位（如 Sales Manager, CEO, Purchasing Director）
-- email: 标准邮箱格式
-- Website: 公司官网或完整网址
-- Address: 地址信息（城市/地区/完整地址）
-- Company: 公司名称（企业主体名，不要把 slogan 当公司名）
-- Continent: 洲别（Asia / Europe / North America / South America / Africa / Oceania），如未直接标注可根据国家推断
-- Nation: 国家英文名称（如 China, Germany, United States, UAE）
-- Phone: 固定电话（如无法区分固话和手机，优先放 Phone）
-- Mobile: 手机号（标识了 Mobile/Cell/WhatsApp 的优先放此字段）
-- TypeOfClients: 客户类型（Distributor / Contractor / Wholesaler / Retailer / OEM / Builder），没有则留空
-- InterestedIn: 感兴趣的产品或业务方向
-- DemandDetails: 详细需求、采购意向、项目背景、备注等
-- salesman: 业务员姓名，仅从 "Filled by", "Filled By", "FilledBy", "Salesman", "Sales Rep", "Handled by" 字段提取
-
-【严格规则】
-1. 只提取图片中真实可见的信息，不得猜测或编造
-2. 如无法确认某字段，必须返回空字符串 ""
-3. 不确定是公司名还是人名时留空
-4. salesman 只能来自图片中明确出现的 Filled by 或等价字段，不得猜测
-5. 返回严格 JSON 数组格式
-6. 输出示例：
-[
-  {
-    "Name": "John Smith",
-    "Title": "Sales Manager",
-    "email": "john@example.com",
-    "Website": "www.abc.com",
-    "Address": "Berlin, Germany",
-    "Company": "ABC GmbH",
-    "Continent": "Europe",
-    "Nation": "Germany",
-    "Phone": "+49 12345678",
-    "Mobile": "+49 987654321",
-    "TypeOfClients": "Distributor",
-    "InterestedIn": "PEX Pipe",
-    "DemandDetails": "Interested in floor heating",
-    "salesman": "David Chen"
-  }
-]`;
-
-// ---- 文件转 Base64 ----
 function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() { resolve(reader.result.split(',')[1]); };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
-// ---- OpenRouter API 调用 ----
 async function callOpenRouter(imageFiles) {
-  const url = 'https://openrouter.ai/api/v1/chat/completions';
-  
-  // 构建消息内容
-  const imageContents = [];
-  for (const file of imageFiles) {
-    const base64 = await fileToBase64(file);
-    imageContents.push({
-      type: 'image_url',
-      image_url: { url: `data:${file.type};base64,${base64}` }
-    });
+  var url = 'https://openrouter.ai/api/v1/chat/completions';
+  var imageContents = [];
+  for (var i = 0; i < imageFiles.length; i++) {
+    var base64 = await fileToBase64(imageFiles[i]);
+    imageContents.push({ type: 'image_url', image_url: { url: 'data:' + imageFiles[i].type + ';base64,' + base64 } });
   }
-  
-  const body = {
+  var body = {
     model: modelConfig.model,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: RECOGNITION_PROMPT },
-          ...imageContents
-        ]
-      }
-    ],
+    messages: [{ role: 'user', content: [{ type: 'text', text: RECOGNITION_PROMPT }].concat(imageContents) }],
     max_tokens: 4096,
     temperature: 0.1
   };
-  
-  const response = await fetch(url, {
+  var response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${modelConfig.apiKey}`,
-      'HTTP-Referer': window.location.href,
-      'X-Title': 'Exhibition Lead Recognition Tool'
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + modelConfig.apiKey, 'HTTP-Referer': window.location.href, 'X-Title': 'Exhibition Lead Recognition Tool' },
     body: JSON.stringify(body)
   });
-  
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`API 错误 (${response.status}): ${errText}`);
+  if (!response.ok) { var errText = await response.text(); throw new Error('API 错误 (' + response.status + '): ' + errText); }
+  var data = await response.json();
+  var content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '';
+  var parsed;
+  try { parsed = JSON.parse(content); }
+  catch(e) {
+    var jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) { parsed = JSON.parse(jsonMatch[1].trim()); }
+    else { throw new Error('无法解析 JSON'); }
   }
-  
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || '';
-  
-  // 解析 JSON（模型可能返回 markdown 包裹的 JSON）
-  let parsed;
-  try {
-    // 尝试直接解析
-    parsed = JSON.parse(content);
-  } catch(e) {
-    // 尝试提取 JSON 块
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[1].trim());
-    } else {
-      // 尝试找到 [ 开头 ] 结尾的部分
-      const arrMatch = content.match(/\[[\s\S]*\]/);
-      if (arrMatch) {
-        parsed = JSON.parse(arrMatch[0]);
-      } else {
-        throw new Error('无法解析模型返回的 JSON:\n' + content.substring(0, 500));
-      }
-    }
-  }
-  
-  // 确保是数组
-  if (!Array.isArray(parsed)) {
-    parsed = [parsed];
-  }
-  
-  // 标准化字段，添加 id
-  return parsed.map((item, i) => {
-    const record = { id: genId() };
-    CONFIG.FIELDS.forEach(f => {
-      record[f] = String(item[f] || '').trim();
-    });
+  if (!Array.isArray(parsed)) parsed = [parsed];
+  return parsed.map(function(item) {
+    var record = { id: genId() };
+    CONFIG.FIELDS.forEach(function(f) { record[f] = String(item[f] || '').trim(); });
     return record;
   });
 }
 
-// ---- MOCK 数据生成 ----
-const MOCK_DATA = {
-  names: ['Michael Brown', 'Sarah Johnson', 'Hans Schmidt', 'Yuki Yamamoto', 'Ahmed Al-Rashid', 'Marie Dupont', 'Chen Wei', 'Anna Kowalski', 'Carlos Rodriguez', 'Priya Sharma'],
-  titles: ['Sales Manager', 'CEO', 'Purchasing Director', 'Technical Engineer', 'Marketing Manager', 'Product Manager', 'Business Development', 'Project Manager'],
-  companies: ['Global Trade Co.', 'Pacific Solutions', 'Euro Asia Ltd.', 'Sunrise Technologies', 'Metro Construct GmbH', 'Delta Systems', 'Apex Industries', 'Prime Solutions'],
-  countries: ['Germany', 'United States', 'China', 'Japan', 'France', 'Singapore', 'UAE', 'Australia', 'United Kingdom', 'Canada'],
-  cities: ['Berlin', 'New York', 'Shanghai', 'Tokyo', 'Paris', 'Singapore', 'Dubai', 'Sydney', 'London', 'Toronto'],
-  continents: { 'Germany': 'Europe', 'France': 'Europe', 'United Kingdom': 'Europe', 'United States': 'North America', 'Canada': 'North America', 'China': 'Asia', 'Japan': 'Asia', 'Singapore': 'Asia', 'UAE': 'Asia', 'Australia': 'Oceania' },
-  types: ['Distributor', 'Contractor', 'Wholesaler', 'Retailer', 'OEM', 'Builder'],
-  products: ['PEX Pipe', 'PE-RT Pipe', 'PP-R Pipe', 'PVC Pipe', 'Floor Heating System', 'Water Supply System', 'Drainage System', 'Solar Heating'],
-  details: [
-    'Interested in bulk order for new project',
-    'Looking for long-term partnership',
-    'Need samples for evaluation',
-    'Request technical specifications',
-    'Interested in OEM services',
-    'Construction project starting Q2 2026',
-    'Budget: $50,000 - $100,000',
-    'Seeking competitive pricing'
-  ],
-  salesmen: ['David Chen', 'Amy Zhang', 'Michael Wang', 'Sophie Liu', 'James Wu', 'Linda Yang']
+var MOCK_DATA = {
+  names: ['Michael Brown', 'Sarah Johnson', 'Hans Schmidt', 'Yuki Yamamoto', 'Ahmed Al-Rashid'],
+  titles: ['Sales Manager', 'CEO', 'Purchasing Director', 'Technical Engineer', 'Marketing Manager'],
+  companies: ['Global Trade Co.', 'Pacific Solutions', 'Euro Asia Ltd.', 'Sunrise Technologies', 'Metro Construct GmbH'],
+  countries: ['Germany', 'United States', 'China', 'Japan', 'France', 'Singapore', 'UAE', 'Australia'],
+  continents: { 'Germany': 'Europe', 'France': 'Europe', 'United States': 'North America', 'China': 'Asia', 'Japan': 'Asia', 'Singapore': 'Asia', 'UAE': 'Asia', 'Australia': 'Oceania' },
+  types: ['Distributor', 'Contractor', 'Wholesaler', 'Retailer', 'OEM'],
+  products: ['PEX Pipe', 'PE-RT Pipe', 'PP-R Pipe', 'Floor Heating System', 'Water Supply System'],
+  salesmen: ['David Chen', 'Amy Zhang', 'Michael Wang', 'Sophie Liu', 'James Wu']
 };
 
 function generateMockRecord() {
-  const name = MOCK_DATA.names[Math.floor(Math.random() * MOCK_DATA.names.length)];
-  const country = MOCK_DATA.countries[Math.floor(Math.random() * MOCK_DATA.countries.length)];
-  const city = MOCK_DATA.cities[Math.floor(Math.random() * MOCK_DATA.cities.length)];
-  const hasSalesman = Math.random() > 0.3;
-  const maybeEmpty = (val) => Math.random() > 0.15 ? val : '';
-  
+  var name = MOCK_DATA.names[Math.floor(Math.random() * MOCK_DATA.names.length)];
+  var country = MOCK_DATA.countries[Math.floor(Math.random() * MOCK_DATA.countries.length)];
+  var hasSalesman = Math.random() > 0.3;
+  var maybeEmpty = function(val) { return Math.random() > 0.15 ? val : ''; };
   return {
     id: genId(),
     Name: name,
     Title: maybeEmpty(MOCK_DATA.titles[Math.floor(Math.random() * MOCK_DATA.titles.length)]),
     email: name.toLowerCase().split(' ')[0] + '@' + ['gmail.com', 'outlook.com', 'company.co'][Math.floor(Math.random() * 3)],
-    Website: 'www.' + MOCK_DATA.companies[Math.floor(Math.random() * MOCK_DATA.companies.length)].toLowerCase().replace(/[^a-z]/g, '') + '.com',
-    Address: city + ', ' + country,
+    Website: 'www.example.com',
+    Address: country,
     Company: MOCK_DATA.companies[Math.floor(Math.random() * MOCK_DATA.companies.length)],
     Continent: MOCK_DATA.continents[country],
     Nation: country,
-    Phone: '+' + (Math.floor(Math.random() * 900 + 100)) + ' ' + Math.floor(Math.random() * 90000000 + 10000000),
-    Mobile: '+' + (Math.floor(Math.random() * 900 + 100)) + ' ' + Math.floor(Math.random() * 900000000 + 100000000),
+    Phone: '+1 23456789',
+    Mobile: '+86 12345678901',
     TypeOfClients: MOCK_DATA.types[Math.floor(Math.random() * MOCK_DATA.types.length)],
     InterestedIn: MOCK_DATA.products[Math.floor(Math.random() * MOCK_DATA.products.length)],
-    DemandDetails: MOCK_DATA.details[Math.floor(Math.random() * MOCK_DATA.details.length)],
+    DemandDetails: 'Interested in bulk order',
     salesman: hasSalesman ? MOCK_DATA.salesmen[Math.floor(Math.random() * MOCK_DATA.salesmen.length)] : ''
   };
 }
 
-// ---- 主识别入口 ----
 async function startRecognize() {
-  if (state.images.length === 0) {
-    alert('请先上传图片');
-    return;
-  }
+  if (state.images.length === 0) { alert('请先上传图片'); return; }
+  if (modelConfig.mode === 'real' && !modelConfig.apiKey) { alert('请先在设置中配置 API Key'); openSettings(); return; }
   
-  // 检查模式
-  if (modelConfig.mode === 'real' && !modelConfig.apiKey) {
-    alert('请先在设置中配置 OpenRouter API Key');
-    openSettings();
-    return;
-  }
-  
-  const loading = document.getElementById('loading');
-  const progressBar = document.getElementById('progress-bar');
-  const loadingText = document.getElementById('loading-text');
-  const loadingSub = document.getElementById('loading-sub');
+  var loading = document.getElementById('loading');
+  var progressBar = document.getElementById('progress-bar');
+  var loadingText = document.getElementById('loading-text');
+  var loadingSub = document.getElementById('loading-sub');
   
   loading.classList.remove('hidden');
-  
-  // 进度条动画
-  let progress = 0;
-  const progressInterval = setInterval(() => {
+  var progress = 0;
+  var progressInterval = setInterval(function() {
     progress += Math.random() * 10;
     if (progress > 90) progress = 90;
     progressBar.style.width = progress + '%';
@@ -703,540 +458,172 @@ async function startRecognize() {
   
   try {
     if (isRealMode()) {
-      // 真实模型调用
       loadingText.textContent = '识别中...';
-      loadingSub.textContent = `正在调用 ${modelConfig.model}`;
-      
-      const files = state.images.map(i => i.file);
+      loadingSub.textContent = '正在调用 ' + modelConfig.model;
+      var files = state.images.map(function(i) { return i.file; });
       state.records = await callOpenRouter(files);
-      
-      loadingText.textContent = '识别完成！';
-      loadingSub.textContent = `共识别 ${state.records.length} 条记录`;
     } else {
-      // Mock 模式
       loadingText.textContent = '识别中...';
       loadingSub.textContent = 'Mock 模拟模式';
-      await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000));
-      state.records = state.images.map(() => generateMockRecord());
+      await new Promise(function(r) { setTimeout(r, 2000); });
+      state.records = state.images.map(function() { return generateMockRecord(); });
     }
-    
     clearInterval(progressInterval);
     progressBar.style.width = '100%';
-    
-    setTimeout(() => {
+    setTimeout(function() {
       loading.classList.add('hidden');
       progressBar.style.width = '0%';
       switchTab('records');
     }, 500);
-    
-  } catch (err) {
+  } catch(err) {
     clearInterval(progressInterval);
     progressBar.style.width = '0%';
     loading.classList.add('hidden');
-    
-    console.error('识别失败:', err);
-    alert('识别失败：' + (err.message || '未知错误') + '\n\n可切换到 Mock 模式测试');
+    alert('识别失败: ' + (err.message || '未知错误'));
   }
 }
 
-// ====== 记录渲染 ======
 function renderRecords() {
-  const empty = document.getElementById('records-empty');
-  const list = document.getElementById('records-list');
-  
-  if (state.records.length === 0) {
-    empty.classList.remove('hidden');
-    list.classList.add('hidden');
-    return;
-  }
-  
+  var empty = document.getElementById('records-empty');
+  var list = document.getElementById('records-list');
+  if (state.records.length === 0) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
   empty.classList.add('hidden');
   list.classList.remove('hidden');
-  
-  list.innerHTML = state.records.map((r, i) => `
-    <div class="card p-4">
-      <div class="flex justify-between items-start mb-3">
-        <span class="badge badge-blue">客户 ${i + 1}</span>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-secondary" onclick="editRecord('${r.id}')">✏️ 编辑</button>
-          <button class="btn btn-sm btn-secondary" onclick="showFormFor('${r.id}')">📝 Form</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">🗑️</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-2 text-sm">
-        ${renderQuickView(r)}
-      </div>
-    </div>
-  `).join('');
+  list.innerHTML = state.records.map(function(r, i) {
+    return '<div class="card p-4"><div class="flex justify-between items-start mb-3"><span class="badge badge-blue">客户 ' + (i + 1) + '</span><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editRecord(\'' + r.id + '\')">✏️ 编辑</button><button class="btn btn-sm btn-secondary" onclick="showFormFor(\'' + r.id + '\')">📝 Form</button><button class="btn btn-sm btn-danger" onclick="deleteRecord(\'' + r.id + '\')">🗑️</button></div></div><div class="grid grid-cols-2 gap-2 text-sm">' + renderQuickView(r) + '</div></div>';
+  }).join('');
 }
 
 function renderQuickView(r) {
-  const fields = ['Name', 'Company', 'email', 'Phone', 'Mobile', 'Nation', 'InterestedIn'];
-  return fields.map(f => `
-    <div class="bg-slate-50 rounded-lg p-2">
-      <div class="text-xs text-slate-400">${CONFIG.FIELD_LABELS[f]}</div>
-      <div class="font-medium truncate">${escapeHtml(r[f]) || '<span class="text-slate-300">-</span>'}</div>
-    </div>
-  `).join('') + (r.salesman ? `
-    <div class="bg-green-50 rounded-lg p-2 col-span-2 border border-green-200">
-      <div class="text-xs text-green-600">⭐ ${CONFIG.FIELD_LABELS.salesman}</div>
-      <div class="font-medium text-green-700">${escapeHtml(r.salesman)}</div>
-    </div>
-  ` : '');
+  var fields = ['Name', 'Company', 'email', 'Nation', 'InterestedIn'];
+  var html = fields.map(function(f) {
+    return '<div class="bg-slate-50 rounded-lg p-2"><div class="text-xs text-slate-400">' + CONFIG.FIELD_LABELS[f] + '</div><div class="font-medium truncate">' + (r[f] ? escapeHtml(r[f]) : '<span class="text-slate-300">-</span>') + '</div></div>';
+  }).join('');
+  if (r.salesman) {
+    html += '<div class="bg-green-50 rounded-lg p-2 col-span-2 border border-green-200"><div class="text-xs text-green-600">⭐ ' + CONFIG.FIELD_LABELS.salesman + '</div><div class="font-medium text-green-700">' + escapeHtml(r.salesman) + '</div></div>';
+  }
+  return html;
 }
 
-// ====== 编辑记录 ======
 function editRecord(id) {
   state.currentEditId = id;
-  const record = state.records.find(r => r.id === id);
+  var record = state.records.find(function(r) { return r.id === id; });
   if (!record) return;
-  
-  const body = document.getElementById('edit-body');
-  body.innerHTML = CONFIG.FIELDS.map(f => `
-    <div class="mb-3">
-      <label class="block text-sm font-medium text-slate-700 mb-1">
-        ${CONFIG.FIELD_LABELS[f]} ${f === 'email' ? '⭐' : ''} ${f === 'salesman' ? '⭐' : ''}
-      </label>
-      ${f === 'email' ? '<p class="text-xs text-orange-500 mb-1">⚠️ Pardot 必填，提交前必须填写有效邮箱</p>' : ''}
-      ${f === 'email' 
-        ? `<input type="email" class="input border-orange-300" id="edit-${f}" value="${escapeAttr(record[f])}" placeholder="必填 - Pardot 提交必需">`
-        : f === 'DemandDetails' || f === 'Address' 
-        ? `<textarea class="input" rows="2" id="edit-${f}">${escapeHtml(record[f])}</textarea>`
-        : `<input type="text" class="input" id="edit-${f}" value="${escapeAttr(record[f])}">`
-      }
-    </div>
-  `).join('');
-  
+  var body = document.getElementById('edit-body');
+  body.innerHTML = CONFIG.FIELDS.map(function(f) {
+    return '<div class="mb-3"><label class="block text-sm font-medium text-slate-700 mb-1">' + CONFIG.FIELD_LABELS[f] + (f === 'email' ? ' ⭐' : '') + '</label>' + (f === 'DemandDetails' || f === 'Address' ? '<textarea class="input" rows="2" id="edit-' + f + '">' + escapeHtml(record[f]) + '</textarea>' : '<input type="' + (f === 'email' ? 'email' : 'text') + '" class="input" id="edit-' + f + '" value="' + escapeAttr(record[f]) + '">') + '</div>';
+  }).join('');
   document.getElementById('edit-title').textContent = '编辑客户记录';
   document.getElementById('edit-modal').classList.remove('hidden');
 }
 
 function saveEdit() {
-  const record = state.records.find(r => r.id === state.currentEditId);
+  var record = state.records.find(function(r) { return r.id === state.currentEditId; });
   if (!record) return;
-  
-  CONFIG.FIELDS.forEach(f => {
-    const el = document.getElementById('edit-' + f);
+  CONFIG.FIELDS.forEach(function(f) {
+    var el = document.getElementById('edit-' + f);
     if (el) record[f] = el.value;
   });
-  
   closeEdit();
   renderRecords();
 }
 
-function closeEdit() {
-  document.getElementById('edit-modal').classList.add('hidden');
-  state.currentEditId = null;
-}
+function closeEdit() { document.getElementById('edit-modal').classList.add('hidden'); state.currentEditId = null; }
 
-function deleteRecord(id) {
-  if (confirm('确定删除这条记录？')) {
-    state.records = state.records.filter(r => r.id !== id);
-    renderRecords();
-  }
-}
+function deleteRecord(id) { if (confirm('确定删除这条记录？')) { state.records = state.records.filter(function(r) { return r.id !== id; }); renderRecords(); } }
 
-// ====== 导出功能 ======
 function renderExport() {
-  const hasData = state.records.length > 0;
+  var hasData = state.records.length > 0;
   document.getElementById('export-empty').classList.toggle('hidden', hasData);
   document.getElementById('export-panel').classList.toggle('hidden', !hasData);
-  
   if (hasData) {
-    const stats = document.getElementById('stats-list');
-    stats.innerHTML = `
-      <div class="stat-item"><span class="text-slate-500">客户总数</span><span class="font-medium">${state.records.length} 条</span></div>
-      <div class="stat-item"><span class="text-slate-500">有业务员信息</span><span class="font-medium text-green-600">${state.records.filter(r => r.salesman).length} 条</span></div>
-      <div class="stat-item"><span class="text-slate-500">有邮箱信息</span><span class="font-medium">${state.records.filter(r => r.email).length} 条</span></div>
-      <div class="stat-item"><span class="text-slate-500">有电话信息</span><span class="font-medium">${state.records.filter(r => r.Phone || r.Mobile).length} 条</span></div>
-    `;
+    document.getElementById('stats-list').innerHTML = '<div class="stat-item"><span class="text-slate-500">客户总数</span><span class="font-medium">' + state.records.length + '</span></div><div class="stat-item"><span class="text-slate-500">有业务员信息</span><span class="font-medium text-green-600">' + state.records.filter(function(r) { return r.salesman; }).length + '</span></div><div class="stat-item"><span class="text-slate-500">有邮箱信息</span><span class="font-medium">' + state.records.filter(function(r) { return r.email; }).length + '</span></div>';
   }
 }
 
 function doExportExcel() {
-  if (state.records.length === 0) {
-    alert('没有数据可导出');
-    return;
-  }
-  
-  const wb = XLSX.utils.book_new();
-  const header = CONFIG.FIELDS;
-  const rows = state.records.map(r => CONFIG.FIELDS.map(f => r[f] || ''));
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  
-  // 设置列宽
-  ws['!cols'] = CONFIG.FIELDS.map(() => ({ wch: 18 }));
-  
+  if (state.records.length === 0) { alert('没有数据可导出'); return; }
+  var wb = XLSX.utils.book_new();
+  var header = CONFIG.FIELDS;
+  var rows = state.records.map(function(r) { return CONFIG.FIELDS.map(function(f) { return r[f] || ''; }); });
+  var ws = XLSX.utils.aoa_to_sheet([header].concat(rows));
+  ws['!cols'] = CONFIG.FIELDS.map(function() { return { wch: 18 }; });
   XLSX.utils.book_append_sheet(wb, ws, '客户信息');
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  XLSX.writeFile(wb, `exhibition_leads_${date}.xlsx`);
+  var date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  XLSX.writeFile(wb, 'exhibition_leads_' + date + '.xlsx');
 }
 
-function showJson() {
-  document.getElementById('json-content').textContent = JSON.stringify(state.records, null, 2);
-  document.getElementById('json-modal').classList.remove('hidden');
-}
+function showJson() { document.getElementById('json-content').textContent = JSON.stringify(state.records, null, 2); document.getElementById('json-modal').classList.remove('hidden'); }
+function closeJson() { document.getElementById('json-modal').classList.add('hidden'); }
+function copyJson() { navigator.clipboard.writeText(JSON.stringify(state.records, null, 2)); alert('JSON 已复制'); }
 
-function closeJson() {
-  document.getElementById('json-modal').classList.add('hidden');
-}
-
-function copyJson() {
-  navigator.clipboard.writeText(JSON.stringify(state.records, null, 2));
-  alert('JSON 已复制到剪贴板');
-}
-
-// ====== Form 数据 ======
-function showFormFor(id) {
-  const record = state.records.find(r => r.id === id);
-  if (!record) return;
-  showFormData(record);
-}
-
-function showAllFormData() {
-  if (state.records.length === 0) return;
-  // 显示第一条作为预览
-  showFormData(state.records[0]);
-}
+function showFormFor(id) { var record = state.records.find(function(r) { return r.id === id; }); if (record) showFormData(record); }
+function showAllFormData() { if (state.records.length > 0) showFormData(state.records[0]); }
 
 function showFormData(record) {
   state.currentFormRecord = record;
-  
-  const content = document.getElementById('form-data-content');
-  content.innerHTML = CONFIG.FIELDS.map(f => `
-    <div class="flex text-sm py-2 border-b border-slate-100">
-      <span class="w-28 shrink-0 text-slate-500">${f}</span>
-      <span class="flex-1 break-all ${record[f] ? 'text-slate-800' : 'text-slate-300'}">${escapeHtml(record[f]) || '(空)'}</span>
-    </div>
-  `).join('') + `
-    <div class="mt-4">
-      <p class="text-xs text-slate-500 mb-1">URL Encoded:</p>
-      <pre class="bg-slate-100 p-2 rounded text-xs break-all">${generateFormEncoded(record)}</pre>
-    </div>
-  `;
-  
+  var content = document.getElementById('form-data-content');
+  content.innerHTML = CONFIG.FIELDS.map(function(f) {
+    return '<div class="flex text-sm py-2 border-b border-slate-100"><span class="w-28 shrink-0 text-slate-500">' + f + '</span><span class="flex-1 break-all ' + (record[f] ? 'text-slate-800' : 'text-slate-300') + '">' + (escapeHtml(record[f]) || '(空)') + '</span></div>';
+  }).join('');
   document.getElementById('form-modal').classList.remove('hidden');
 }
 
-function closeFormModal() {
-  document.getElementById('form-modal').classList.add('hidden');
-  state.currentFormRecord = null;
-}
+function closeFormModal() { document.getElementById('form-modal').classList.add('hidden'); state.currentFormRecord = null; }
 
 function generateFormEncoded(record) {
-  const params = new URLSearchParams();
-  CONFIG.FIELDS.forEach(f => params.append(f, record[f] || ''));
-  return params.toString();
+  var parts = [];
+  CONFIG.FIELDS.forEach(function(f) { if (record[f]) parts.push(f + '=' + encodeURIComponent(record[f])); });
+  return parts.join('&');
 }
 
-function copyFormData() {
-  if (!state.currentFormRecord) return;
-  const encoded = generateFormEncoded(state.currentFormRecord);
-  navigator.clipboard.writeText(encoded);
-  alert('Form 数据已复制到剪贴板');
-}
-
-// ====== 提交到 Pardot ======
+function copyFormData() { if (state.currentFormRecord) { navigator.clipboard.writeText(generateFormEncoded(state.currentFormRecord)); alert('已复制'); } }
 
 function validateBeforeSubmit(record) {
-  if (!record.email || record.email.trim() === '') {
-    return { valid: false, msg: '❌ Email 为必填字段，请先填写邮箱地址。\n\n请在编辑页面补充 email 后再提交。' };
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(record.email.trim())) {
-    return { valid: false, msg: '❌ 邮箱格式不正确：' + record.email + '\n\n请修正后再提交。' };
-  }
-  if (!record.Name || record.Name.trim() === '') {
-    return { valid: false, msg: '⚠️ 客户姓名为空，Pardot 可能需要此字段。\n\n是否仍然提交？' };
-  }
+  if (!record.email || record.email.trim() === '') return { valid: false, msg: '邮箱为必填字段' };
+  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(record.email.trim())) return { valid: false, msg: '邮箱格式不正确' };
   return { valid: true };
 }
 
 function submitToPardot() {
-  if (!state.currentFormRecord) {
-    alert('没有可提交的数据');
-    return;
-  }
+  if (!state.currentFormRecord) { alert('没有可提交的数据'); return; }
+  var validation = validateBeforeSubmit(state.currentFormRecord);
+  if (!validation.valid) { alert(validation.msg); return; }
+  if (!confirm('确定要提交到 Pardot 吗？')) return;
   
-  const validation = validateBeforeSubmit(state.currentFormRecord);
-  if (!validation.valid && !validation.msg.startsWith('⚠️')) {
-    alert(validation.msg);
-    return;
-  }
+  var record = state.currentFormRecord;
+  var parts = [];
+  CONFIG.FIELDS.forEach(function(f) { if (record[f] && record[f].trim()) parts.push(f + '=' + encodeURIComponent(record[f])); });
+  var submitUrl = CONFIG.PARDOT_URL + '?' + parts.join('&');
   
-  const name = state.currentFormRecord.Name || '此客户';
-  let confirmMsg = `确定要提交 ${name} 的信息到 Pardot 吗？\n\n`;
-  confirmMsg += `📧 Email: ${state.currentFormRecord.email}\n`;
-  confirmMsg += `🏢 Company: ${state.currentFormRecord.Company || '(未填)'}\n`;
+  // 新窗口打开 Pardot 表单
+  window.open(CONFIG.PARDOT_URL, '_blank');
   
-  if (validation.msg && validation.msg.startsWith('⚠️')) {
-    confirmMsg = validation.msg.replace('⚠️ ', '') + '\n\n' + confirmMsg;
-  }
-  
-  if (!confirm(confirmMsg)) return;
-  
-  const record = state.currentFormRecord;
-  
-  // 构建带 iframe 的确认页面
-  const formHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Pardot 提交</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; background: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: #2563eb; color: white; padding: 15px 20px; }
-    .header h2 { margin: 0; font-size: 18px; }
-    .content { padding: 20px; }
-    .status { color: #666; margin-bottom: 15px; }
-    .status.loading { color: #2563eb; }
-    .status.success { color: #16a34a; }
-    .status.error { color: #dc2626; }
-    iframe { width: 100%; height: 400px; border: none; }
-    .info { background: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
-    .info h3 { margin: 0 0 10px 0; font-size: 14px; color: #1e40af; }
-    .info p { margin: 5px 0; font-size: 13px; color: #1e40af; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>📋 正在填充 Pardot 表单...</h2>
-    </div>
-    <div class="content">
-      <div class="info">
-        <h3>提交信息确认：</h3>
-        <p><strong>Email:</strong> ${(record.email || '').replace(/</g, '&lt;')}</p>
-        <p><strong>公司:</strong> ${(record.Company || '').replace(/</g, '&lt;')}</p>
-        <p><strong>姓名:</strong> ${(record.Name || '').replace(/</g, '&lt;')}</p>
-      </div>
-      <p class="status loading" id="status">⏳ 等待表单加载...</p>
-      <iframe id="pardot-form" src="https://go.rifeng.com/l/900071/2026-03-26/3tbjg2" frameborder="0"></iframe>
-    </div>
-  </div>
-  <script>
-    const formData = ${JSON.stringify(record)};
-    
-    document.getElementById('pardot-form').onload = function() {
-      setTimeout(fillAndSubmit, 1000);
-    };
-    
-    function fillAndSubmit() {
-      const iframe = document.getElementById('pardot-form');
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      const status = document.getElementById('status');
-      
-      try {
-        // 填充字段
-        const fieldMap = {
-          'email': 'email',
-          'Name': 'name',
-          'Title': 'title',
-          'Company': 'company',
-          'Website': 'website',
-          'Address': 'address',
-          'Phone': 'phone',
-          'Mobile': 'mobile'
-        };
-        
-        let filled = 0;
-        for (const [key, value] of Object.entries(formData)) {
-          if (value && value.trim()) {
-            // 尝试多种可能的字段名
-            const possibleNames = [key.toLowerCase(), key, fieldMap[key], fieldMap[key.toLowerCase()]];
-            for (const fieldName of possibleNames) {
-              if (!fieldName) continue;
-              const input = doc.querySelector('input[name="' + fieldName + '"], textarea[name="' + fieldName + '"]');
-              if (input) {
-                input.value = value.trim();
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-                filled++;
-                break;
-              }
-            }
-          }
-        }
-        
-        status.textContent = '✅ 已填充 ' + filled + ' 个字段，表单已准备好提交';
-        status.className = 'status success';
-        
-        // 尝试自动提交（如果 Pardot 表单支持）
-        const form = doc.querySelector('form');
-        if (form) {
-          // 3秒后自动提交（给用户时间查看）
-          setTimeout(() => {
-            const submitBtn = doc.querySelector('button[type="submit"], input[type="submit"]');
-            if (submitBtn) {
-              status.textContent = '⏳ 正在提交...';
-              submitBtn.click();
-            }
-          }, 2000);
-        }
-      } catch(e) {
-        status.textContent = '⚠️ 填充完成，请在表单中检查并手动提交';
-        status.className = 'status error';
-      }
-    }
-  </script>
-</body>
-</html>`;
-  
-  const blob = new Blob([formHtml], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  
+  alert('已打开 Pardot 表单页面！\n\n请在新窗口中手动填写或复制已识别的数据后提交。\n\n已复制数据到剪贴板，可以直接粘贴。', '复制数据', navigator.clipboard.writeText(parts.join('&')));
+  copyFormData();
   closeFormModal();
 }
 
 function submitAllToPardot() {
-  if (state.records.length === 0) {
-    alert('没有可提交的记录');
-    return;
-  }
+  if (state.records.length === 0) { alert('没有可提交的记录'); return; }
+  if (!confirm('确定要提交全部 ' + state.records.length + ' 条记录到 Pardot 吗？')) return;
   
-  const invalidRecords = [];
-  state.records.forEach((r, i) => {
-    const v = validateBeforeSubmit(r);
-    if (!v.valid) {
-      invalidRecords.push({ index: i + 1, name: r.Name || '(未命名)', reason: v.msg });
-    }
-  });
-  
-  if (invalidRecords.length > 0) {
-    const list = invalidRecords.map(r => `  第${r.index}条 ${r.name}：${r.reason}`).join('\n');
-    alert(`以下记录缺少必填字段，无法提交：\n\n${list}\n\n请先补全信息后再提交。`);
-    return;
-  }
-  
-  const count = state.records.length;
-  if (!confirm(`确定要提交全部 ${count} 条记录到 Pardot 吗？`)) return;
-  
-  state.records.forEach((record, i) => {
-    setTimeout(() => {
-      const idx = i + 1;
-      const name = record.Name || '客户' + idx;
-      
-      const formHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>提交 ${idx}/${count}</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; background: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: #2563eb; color: white; padding: 15px 20px; }
-    .header h2 { margin: 0; font-size: 18px; }
-    .content { padding: 20px; }
-    .counter { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 14px; margin-left: 10px; }
-    .status { color: #666; margin-bottom: 15px; }
-    .status.loading { color: #2563eb; }
-    .status.success { color: #16a34a; }
-    iframe { width: 100%; height: 400px; border: none; }
-    .info { background: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
-    .info h3 { margin: 0 0 10px 0; font-size: 14px; color: #1e40af; }
-    .info p { margin: 5px 0; font-size: 13px; color: #1e40af; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>📋 <span class="counter">${idx} / ${count}</span> ${name}</h2>
-    </div>
-    <div class="content">
-      <div class="info">
-        <h3>提交信息：</h3>
-        <p><strong>Email:</strong> ${(record.email || '').replace(/</g, '&lt;')}</p>
-        <p><strong>公司:</strong> ${(record.Company || '').replace(/</g, '&lt;')}</p>
-      </div>
-      <p class="status loading" id="status">⏳ 等待表单加载...</p>
-      <iframe id="pardot-form" src="https://go.rifeng.com/l/900071/2026-03-26/3tbjg2" frameborder="0"></iframe>
-    </div>
-  </div>
-  <script>
-    const formData = ${JSON.stringify(record)};
-    
-    document.getElementById('pardot-form').onload = function() {
-      setTimeout(fillAndSubmit, 1000);
-    };
-    
-    function fillAndSubmit() {
-      const iframe = document.getElementById('pardot-form');
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      const status = document.getElementById('status');
-      
-      try {
-        let filled = 0;
-        for (const [key, value] of Object.entries(formData)) {
-          if (value && value.trim()) {
-            const possibleNames = [key.toLowerCase(), key, key.toLowerCase().replace(' ', '_')];
-            for (const fieldName of possibleNames) {
-              const input = doc.querySelector('input[name="' + fieldName + '"], textarea[name="' + fieldName + '"]');
-              if (input) {
-                input.value = value.trim();
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                filled++;
-                break;
-              }
-            }
-          }
-        }
-        
-        status.textContent = '✅ 已填充 ' + filled + ' 个字段';
-        status.className = 'status success';
-        
-        setTimeout(() => {
-          const submitBtn = doc.querySelector('button[type="submit"], input[type="submit"]');
-          if (submitBtn) {
-            submitBtn.click();
-          }
-        }, 1500);
-      } catch(e) {
-        status.textContent = '⚠️ 请手动填写并提交';
-        status.className = 'status';
+  state.records.forEach(function(record, i) {
+    setTimeout(function() {
+      var parts = [];
+      CONFIG.FIELDS.forEach(function(f) { if (record[f] && record[f].trim()) parts.push(f + '=' + encodeURIComponent(record[f])); });
+      var submitUrl = CONFIG.PARDOT_URL + '?' + parts.join('&');
+      window.open(CONFIG.PARDOT_URL, '_blank');
+      if (i === state.records.length - 1) {
+        setTimeout(function() { alert('已打开全部 ' + state.records.length + ' 个表单页面！'); }, 500);
       }
-    }
-  </script>
-</body>
-</html>`;
-      
-      const blob = new Blob([formHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      
-      if (i === count - 1) {
-        setTimeout(() => {
-          alert(`已打开全部 ${count} 个提交页面！\n\n请逐个检查并提交。`);
-        }, 500);
-      }
-    }, i * 1000);
+    }, i * 1500);
   });
 }
 
-// ====== 初始化 ======
-document.addEventListener('DOMContentLoaded', () => {
-  // 加载保存的设置
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
   loadSettings();
-  
-  // 检查企业微信参数（预留）
-  const urlParams = new URLSearchParams(window.location.search);
-  const wxUserId = urlParams.get('userId');
-  const wxUserName = urlParams.get('userName');
-  
-  if (wxUserId) {
-    const wxUserEl = document.getElementById('wx-user');
-    wxUserEl.classList.remove('hidden');
-    wxUserEl.textContent = `用户: ${wxUserName || wxUserId}`;
-  }
-  
-  // 如果没有配置 API Key，提示用户
-  if (!modelConfig.apiKey) {
-    console.log('未配置 API Key，使用 Mock 模式');
-  }
+  if (!modelConfig.apiKey) console.log('未配置 API Key，使用 Mock 模式');
 });
-</script>
-</body>
-</html>
