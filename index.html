@@ -975,22 +975,43 @@ function submitToPardot() {
   
   if (!confirm(confirmMsg)) return;
   
-  // 手动构建 URL，保留 @ 不编码
+  // 使用 iframe 提交表单（POST 方式，@ 不会被编码）
   const record = state.currentFormRecord;
-  const urlParts = [];
+  
+  // 创建 iframe
+  const iframe = document.createElement('iframe');
+  iframe.name = 'pardot-iframe';
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  
+  // 创建表单，指向 iframe
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = CONFIG.PARDOT_URL;
+  form.target = 'pardot-iframe';
+  
+  // 添加字段
   CONFIG.FIELDS.forEach(f => {
     const val = (record[f] || '').trim();
     if (val) {
-      // 只处理空格，其他字符原样保留
-      const safeVal = val.replace(/ /g, '+');
-      urlParts.push(f + '=' + safeVal);
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = f;
+      input.value = val;
+      form.appendChild(input);
     }
   });
   
-  const submitUrl = CONFIG.PARDOT_URL + '?' + urlParts.join('&');
-  console.log('Final URL:', submitUrl);
+  document.body.appendChild(form);
+  form.submit();
   
-  window.open(submitUrl, '_blank');
+  // 清理
+  setTimeout(() => {
+    document.body.removeChild(form);
+    document.body.removeChild(iframe);
+  }, 5000);
+  
+  alert('✅ 已提交到 Pardot！\n\n请在新窗口确认结果。');
   closeFormModal();
 }
 
@@ -1015,26 +1036,43 @@ function submitAllToPardot() {
   }
   
   const count = state.records.length;
-  if (!confirm(`确定要提交全部 ${count} 条记录到 Pardot 吗？\n\n每条记录会在新窗口打开。`)) return;
+  if (!confirm(`确定要提交全部 ${count} 条记录到 Pardot 吗？`)) return;
   
   state.records.forEach((record, i) => {
     setTimeout(() => {
-      // 手动构建 URL，保留 @ 不编码
-      const urlParts = [];
+      // 使用 iframe 提交表单
+      const iframe = document.createElement('iframe');
+      iframe.name = 'pardot-iframe-' + i;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = CONFIG.PARDOT_URL;
+      form.target = 'pardot-iframe-' + i;
+      
       CONFIG.FIELDS.forEach(f => {
         const val = (record[f] || '').trim();
         if (val) {
-          const safeVal = val.replace(/ /g, '+');
-          urlParts.push(f + '=' + safeVal);
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = f;
+          input.value = val;
+          form.appendChild(input);
         }
       });
       
-      const submitUrl = CONFIG.PARDOT_URL + '?' + urlParts.join('&');
-      window.open(submitUrl, '_blank');
+      document.body.appendChild(form);
+      form.submit();
+      
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+      }, 5000);
       
       if (i === count - 1) {
         setTimeout(() => {
-          alert(`已提交 ${count} 条记录到 Pardot！\n\n请逐个检查新窗口确认提交成功。`);
+          alert(`已提交 ${count} 条记录到 Pardot！\n\n请到 Pardot 后台确认数据。`);
         }, 500);
       }
     }, i * 2000);
