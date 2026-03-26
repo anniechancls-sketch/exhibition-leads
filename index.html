@@ -975,27 +975,58 @@ async function submitToPardot() {
   
   if (!confirm(confirmMsg)) return;
   
-  // 手动构建 URL 参数（不编码 @ 符号）
+  // 手动构建参数（不编码 @）
   const record = state.currentFormRecord;
   const params = CONFIG.FIELDS.map(f => {
     const val = (record[f] || '').trim();
     if (!val) return null;
-    // 只编码空格和特殊字符，但保留 @ 和 . 
     const encoded = encodeURIComponent(val)
-      .replace(/%40/g, '@')    // 还原 @
-      .replace(/%2E/g, '.')    // 还原 .
-      .replace(/%2D/g, '-')    // 还原 -
-      .replace(/%5F/g, '_');   // 还原 _
+      .replace(/%40/g, '@')
+      .replace(/%2E/g, '.')
+      .replace(/%2D/g, '-')
+      .replace(/%5F/g, '_');
     return f + '=' + encoded;
   }).filter(Boolean).join('&');
   
-  // 直接在新窗口打开 Pardot URL
-  const submitUrl = CONFIG.PARDOT_URL + '?' + params;
-  console.log('Submit URL:', submitUrl);
-  window.open(submitUrl, '_blank');
+  // 发送到 API 获取调试信息
+  const loading = document.getElementById('loading');
+  const loadingText = document.getElementById('loading-text');
+  const loadingSub = document.getElementById('loading-sub');
   
-  alert('✅ 已在新窗口提交到 Pardot！\n\n请在新窗口中确认提交成功后关闭。');
-  closeFormModal();
+  loading.classList.remove('hidden');
+  loadingText.textContent = '正在提交...';
+  loadingSub.textContent = '请稍候';
+  
+  try {
+    const response = await fetch('/api/pardot-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+    
+    const result = await response.json();
+    loading.classList.add('hidden');
+    
+    console.log('Pardot Result:', result);
+    
+    if (result.success) {
+      alert(`✅ 提交成功！\n\n📧 Email: ${result.submitted_email}\n\n数据已发送到 Pardot。`);
+      closeFormModal();
+    } else {
+      // 显示详细错误信息
+      let errorMsg = `❌ 提交失败\n\n`;
+      errorMsg += `状态码: ${result.status}\n`;
+      if (result.location) errorMsg += `跳转到: ${result.location}\n`;
+      if (result.pardot_response) {
+        errorMsg += `\nPardot 返回:\n${result.pardot_response.substring(0, 300)}`;
+      }
+      alert(errorMsg);
+    }
+    
+  } catch (err) {
+    loading.classList.add('hidden');
+    alert('提交失败：' + err.message);
+  }
 }
 
 async function submitAllToPardot() {
