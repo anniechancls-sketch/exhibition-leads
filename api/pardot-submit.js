@@ -15,13 +15,21 @@ export default async function handler(req, res) {
     console.log('=== Pardot Submit ===');
     console.log('Body:', body);
     
-    const response = await fetch(PARDOT_URL, {
-      method: 'POST',
+    // 解析参数
+    const params = new URLSearchParams(body);
+    const email = params.get('email');
+    console.log('Email:', email);
+    
+    // 使用 GET 方式提交（拼接到 URL）
+    const submitUrl = PARDOT_URL + '?' + body;
+    console.log('Submit URL:', submitUrl);
+    
+    // 发送 GET 请求
+    const response = await fetch(submitUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (compatible; ExhibitionLeadsTool/1.0)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      body: body,
       redirect: 'manual'
     });
     
@@ -29,20 +37,16 @@ export default async function handler(req, res) {
     const statusCode = response.status;
     
     console.log('Pardot Status:', statusCode);
-    console.log('Pardot Response:', responseText);
+    console.log('Pardot Response:', responseText.substring(0, 300));
     
-    // 提取 email
-    let submittedEmail = '';
-    const emailMatch = body.match(/email=([^&]+)/);
-    if (emailMatch) submittedEmail = decodeURIComponent(emailMatch[1]);
+    // GET 成功通常返回 302 重定向或 200
+    const success = statusCode === 200 || statusCode === 302 || statusCode === 301;
     
-    // 返回详细响应
     res.status(200).json({
-      success: statusCode === 200 || statusCode === 302,
+      success: success,
       status: statusCode,
-      submitted_email: submittedEmail,
-      pardot_response: responseText.substring(0, 500),
-      body_sent: body.substring(0, 300)
+      submitted_email: email || '',
+      message: success ? '提交成功！Pardot 已收到数据。' : '提交完成，请检查 Pardot 后台确认。'
     });
     
   } catch (error) {
