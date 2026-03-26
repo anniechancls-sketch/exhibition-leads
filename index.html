@@ -938,20 +938,6 @@ function copyFormData() {
 
 // ====== 提交到 Pardot ======
 
-// 检测当前运行环境
-function getSubmitBaseUrl() {
-  // Vercel 部署环境
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol === 'https:') {
-    return window.location.origin + '/api/pardot-submit';
-  }
-  // 本地服务器环境
-  if (window.location.protocol === 'http:' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return window.location.origin + '/api/pardot-submit';
-  }
-  // file:// 环境，提示用户
-  return null;
-}
-
 function validateBeforeSubmit(record) {
   if (!record.email || record.email.trim() === '') {
     return { valid: false, msg: '❌ Email 为必填字段，请先填写邮箱地址。\n\n请在编辑页面补充 email 后再提交。' };
@@ -989,68 +975,25 @@ async function submitToPardot() {
   
   if (!confirm(confirmMsg)) return;
   
-  const apiUrl = getSubmitBaseUrl();
-  
-  if (!apiUrl) {
-    // file:// 环境，用复制数据方式
-    alert('⚠️ 当前以文件方式打开，无法直接提交到 Pardot。\n\n已复制 Form 数据到剪贴板。\n请在本地服务器环境中运行本工具后再提交。\n\n临时方案：将下方数据粘贴到 Pardot 测试工具中提交。');
-    copyFormData();
-    return;
-  }
-  
-  // 通过本地服务器代理提交
-  const loading = document.getElementById('loading');
-  const loadingText = document.getElementById('loading-text');
-  const loadingSub = document.getElementById('loading-sub');
-  const progressBar = document.getElementById('progress-bar');
-  
-  loading.classList.remove('hidden');
-  loadingText.textContent = '正在提交...';
-  loadingSub.textContent = '数据发送中';
-  progressBar.style.width = '50%';
-  
+  // 构建完整提交 URL（Pardot 支持直接接收参数）
   const record = state.currentFormRecord;
   const params = new URLSearchParams();
-  CONFIG.FIELDS.forEach(f => params.append(f, record[f] || ''));
+  CONFIG.FIELDS.forEach(f => {
+    const val = (record[f] || '').trim();
+    if (val) params.append(f, val);
+  });
   
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString()
-    });
-    
-    const result = await response.json();
-    progressBar.style.width = '100%';
-    
-    setTimeout(() => {
-      loading.classList.add('hidden');
-      progressBar.style.width = '0%';
-      
-      if (result.success) {
-        alert(`✅ 提交成功！\n\n📧 Email: ${result.submitted_email || record.email}\n\n数据已发送到 Pardot。`);
-        closeFormModal();
-      } else {
-        alert(`❌ 提交失败\n\nPardot 返回状态: ${result.status}\n\n请检查数据后重试。`);
-      }
-    }, 500);
-    
-  } catch (err) {
-    loading.classList.add('hidden');
-    progressBar.style.width = '0%';
-    alert('提交失败：' + err.message);
-  }
+  // 直接在新窗口打开 Pardot URL（GET 方式，浏览器会自动处理跳转）
+  const submitUrl = CONFIG.PARDOT_URL + '?' + params.toString();
+  window.open(submitUrl, '_blank');
+  
+  alert('✅ 已在新窗口提交到 Pardot！\n\n请在新窗口中确认提交成功后关闭。');
+  closeFormModal();
 }
 
 async function submitAllToPardot() {
   if (state.records.length === 0) {
     alert('没有可提交的记录');
-    return;
-  }
-  
-  const apiUrl = getSubmitBaseUrl();
-  if (!apiUrl) {
-    alert('⚠️ 当前以文件方式打开，无法直接提交。\n请通过 http://localhost:8080 访问本工具。');
     return;
   }
   
@@ -1069,48 +1012,25 @@ async function submitAllToPardot() {
   }
   
   const count = state.records.length;
-  if (!confirm(`确定要提交全部 ${count} 条记录到 Pardot 吗？`)) return;
+  if (!confirm(`确定要提交全部 ${count} 条记录到 Pardot 吗？\n\n每条记录会在新窗口打开。`)) return;
   
-  const loading = document.getElementById('loading');
-  const loadingText = document.getElementById('loading-text');
-  const loadingSub = document.getElementById('loading-sub');
-  const progressBar = document.getElementById('progress-bar');
-  loading.classList.remove('hidden');
-  loadingText.textContent = '批量提交中...';
-  
-  let success = 0;
-  let failed = 0;
-  
-  for (let i = 0; i < state.records.length; i++) {
-    const record = state.records[i];
-    loadingSub.textContent = `提交 ${i + 1} / ${count}`;
-    progressBar.style.width = ((i + 1) / count * 100) + '%';
-    
-    const params = new URLSearchParams();
-    CONFIG.FIELDS.forEach(f => params.append(f, record[f] || ''));
-    
-    try {
-      const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+  state.records.forEach((record, i) => {
+    setTimeout(() => {
+      const params = new URLSearchParams();
+      CONFIG.FIELDS.forEach(f => {
+        const val = (record[f] || '').trim();
+        if (val) params.append(f, val);
       });
-      const result = await resp.json();
-      if (result.success) success++;
-      else failed++;
-    } catch(e) {
-      failed++;
-    }
-    
-    // 间隔避免请求过快
-    if (i < state.records.length - 1) {
-      await new Promise(r => setTimeout(r, 500));
-    }
-  }
-  
-  loading.classList.add('hidden');
-  progressBar.style.width = '0%';
-  alert(`批量提交完成！\n\n✅ 成功：${success} 条\n❌ 失败：${failed} 条\n\n请到 Pardot 后台确认数据。`);
+      const submitUrl = CONFIG.PARDOT_URL + '?' + params.toString();
+      window.open(submitUrl, '_blank');
+      
+      if (i === count - 1) {
+        setTimeout(() => {
+          alert(`已提交 ${count} 条记录到 Pardot！\n\n请逐个检查新窗口确认提交成功。`);
+        }, 500);
+      }
+    }, i * 1500);
+  });
 }
 
 // ====== 初始化 ======
