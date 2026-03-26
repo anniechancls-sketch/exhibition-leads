@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/pardot-submit", "destination": "/api/pardot-submit" }
+  ]
+}
