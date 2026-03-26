@@ -1008,9 +1008,6 @@ async function submitToPardot() {
   alert('✅ 已提交到 Pardot！\n\n请在新窗口确认结果。');
   closeFormModal();
 }
-    alert('提交失败：' + err.message);
-  }
-}
 
 async function submitAllToPardot() {
   if (state.records.length === 0) {
