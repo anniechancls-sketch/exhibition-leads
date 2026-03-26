@@ -12,41 +12,44 @@ export default async function handler(req, res) {
     let body = '';
     for await (const chunk of req) body += chunk;
     
-    console.log('=== Pardot Submit ===');
-    console.log('Body:', body);
+    console.log('=== Pardot Submit Debug ===');
+    console.log('Received body:', body);
     
     // 解析参数
     const params = new URLSearchParams(body);
     const email = params.get('email');
-    console.log('Email:', email);
     
-    // 使用 GET 方式提交（拼接到 URL）
+    // 构建完整 URL（保持参数原样）
     const submitUrl = PARDOT_URL + '?' + body;
-    console.log('Submit URL:', submitUrl);
+    console.log('GET URL:', submitUrl);
     
     // 发送 GET 请求
     const response = await fetch(submitUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
       },
-      redirect: 'manual'
+      redirect: 'manual'  // 不自动跳转，获取原始响应
     });
     
     const responseText = await response.text();
     const statusCode = response.status;
+    const locationHeader = response.headers.get('location');
     
-    console.log('Pardot Status:', statusCode);
-    console.log('Pardot Response:', responseText.substring(0, 300));
+    console.log('Status:', statusCode);
+    console.log('Location:', locationHeader);
+    console.log('Response body:', responseText);
     
-    // GET 成功通常返回 302 重定向或 200
-    const success = statusCode === 200 || statusCode === 302 || statusCode === 301;
-    
+    // 返回完整调试信息
     res.status(200).json({
-      success: success,
+      success: statusCode === 302 && locationHeader && !locationHeader.includes('error'),
       status: statusCode,
-      submitted_email: email || '',
-      message: success ? '提交成功！Pardot 已收到数据。' : '提交完成，请检查 Pardot 后台确认。'
+      location: locationHeader,
+      submitted_email: email,
+      pardot_response: responseText.substring(0, 1000),
+      request_url: submitUrl
     });
     
   } catch (error) {
