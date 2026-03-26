@@ -977,20 +977,19 @@ function submitToPardot() {
   
   const record = state.currentFormRecord;
   
-  // 构建表单 HTML
-  let formHtml = `<form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
+  // 构建表单 HTML（multipart 格式）
+  let formHtml = `<!DOCTYPE html><html><body><form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
   CONFIG.FIELDS.forEach(f => {
     const val = (record[f] || '').trim();
     if (val) {
       formHtml += `<input name="${f}" value="${val.replace(/"/g, '&quot;')}">`;
     }
   });
-  formHtml += `</form><script>document.forms[0].submit();</script>`;
+  formHtml += `</form><script>document.forms[0].submit();</script></body></html>`;
   
-  // 创建 Blob 并打开
-  const blob = new Blob([formHtml], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  // 使用 data: URL 而不是 Blob
+  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(formHtml);
+  window.open(dataUrl, '_blank');
   
   alert('✅ 已提交到 Pardot！\n\n请确认新窗口显示成功页面。');
   closeFormModal();
@@ -1022,18 +1021,17 @@ function submitAllToPardot() {
   state.records.forEach((record, i) => {
     setTimeout(() => {
       // 构建表单 HTML
-      let formHtml = `<form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
+      let formHtml = `<!DOCTYPE html><html><body><form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
       CONFIG.FIELDS.forEach(f => {
         const val = (record[f] || '').trim();
         if (val) {
           formHtml += `<input name="${f}" value="${val.replace(/"/g, '&quot;')}">`;
         }
       });
-      formHtml += `</form><script>document.forms[0].submit();</script>`;
+      formHtml += `</form><script>document.forms[0].submit();</script></body></html>`;
       
-      const blob = new Blob([formHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(formHtml);
+      window.open(dataUrl, '_blank');
       
       if (i === count - 1) {
         setTimeout(() => {
