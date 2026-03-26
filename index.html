@@ -965,7 +965,7 @@ function submitToPardot() {
   }
   
   const name = state.currentFormRecord.Name || '此客户';
-  let confirmMsg = `确定要将 ${name} 的信息提交到 Pardot 吗？\n\n`;
+  let confirmMsg = `确定要提交 ${name} 的信息到 Pardot 吗？\n\n`;
   confirmMsg += `📧 Email: ${state.currentFormRecord.email}\n`;
   confirmMsg += `🏢 Company: ${state.currentFormRecord.Company || '(未填)'}\n`;
   
@@ -977,21 +977,42 @@ function submitToPardot() {
   
   const record = state.currentFormRecord;
   
-  // 构建表单 HTML（multipart 格式）
-  let formHtml = `<!DOCTYPE html><html><body><form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
-  CONFIG.FIELDS.forEach(f => {
-    const val = (record[f] || '').trim();
-    if (val) {
-      formHtml += `<input name="${f}" value="${val.replace(/"/g, '&quot;')}">`;
-    }
-  });
-  formHtml += `</form><script>document.forms[0].submit();</script></body></html>`;
+  // 构建简单表单（标准 HTML 格式）
+  const formHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pardot 提交确认</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
+    h2 { color: #1a56db; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    td { padding: 8px; border: 1px solid #ddd; }
+    .label { font-weight: bold; width: 100px; background: #f9fafb; }
+    input[type="text"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+    .submit-btn { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    .submit-btn:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <h2>📋 请确认并提交</h2>
+  <form action="${CONFIG.PARDOT_URL}" method="post">
+    <table>
+${CONFIG.FIELDS.map(f => {
+  const val = (record[f] || '').trim();
+  return `      <tr><td class="label">${f}:</td><td><input type="text" name="${f}" value="${(val || '').replace(/"/g, '&quot;')}"></td></tr>`;
+}).join('\n')}
+    </table>
+    <button type="submit" class="submit-btn">✅ 确认提交到 Pardot</button>
+  </form>
+</body>
+</html>`;
   
-  // 使用 data: URL 而不是 Blob
-  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(formHtml);
-  window.open(dataUrl, '_blank');
+  const blob = new Blob([formHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
   
-  alert('✅ 已提交到 Pardot！\n\n请确认新窗口显示成功页面。');
   closeFormModal();
 }
 
@@ -1020,25 +1041,51 @@ function submitAllToPardot() {
   
   state.records.forEach((record, i) => {
     setTimeout(() => {
-      // 构建表单 HTML
-      let formHtml = `<!DOCTYPE html><html><body><form method="POST" action="${CONFIG.PARDOT_URL}" enctype="multipart/form-data">`;
-      CONFIG.FIELDS.forEach(f => {
-        const val = (record[f] || '').trim();
-        if (val) {
-          formHtml += `<input name="${f}" value="${val.replace(/"/g, '&quot;')}">`;
-        }
-      });
-      formHtml += `</form><script>document.forms[0].submit();</script></body></html>`;
+      const idx = i + 1;
+      const name = record.Name || '客户' + idx;
       
-      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(formHtml);
-      window.open(dataUrl, '_blank');
+      const formHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>提交 ${idx}/${count}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
+    h2 { color: #1a56db; }
+    .counter { background: #e0e7ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    td { padding: 8px; border: 1px solid #ddd; }
+    .label { font-weight: bold; width: 100px; background: #f9fafb; }
+    input[type="text"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+    .submit-btn { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    .submit-btn:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <h2>📋 <span class="counter">${idx} / ${count}</span> ${name}</h2>
+  <form action="${CONFIG.PARDOT_URL}" method="post">
+    <table>
+${CONFIG.FIELDS.map(f => {
+  const val = (record[f] || '').trim();
+  return `      <tr><td class="label">${f}:</td><td><input type="text" name="${f}" value="${(val || '').replace(/"/g, '&quot;')}"></td></tr>`;
+}).join('\n')}
+    </table>
+    <button type="submit" class="submit-btn">✅ 确认提交</button>
+  </form>
+</body>
+</html>`;
+      
+      const blob = new Blob([formHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
       
       if (i === count - 1) {
         setTimeout(() => {
-          alert(`已提交 ${count} 条记录到 Pardot！\n\n请到 Pardot 后台确认数据。`);
+          alert(`已打开全部 ${count} 个提交页面！\n\n请逐个点击确认提交。`);
         }, 500);
       }
-    }, i * 2000);
+    }, i * 1000);
   });
 }
 
