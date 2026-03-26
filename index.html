@@ -975,56 +975,39 @@ async function submitToPardot() {
   
   if (!confirm(confirmMsg)) return;
   
-  // 手动构建参数（不编码 @）
+  // 创建隐藏表单，POST 提交到 Pardot
   const record = state.currentFormRecord;
-  const params = CONFIG.FIELDS.map(f => {
+  
+  // 移除旧表单（如果有）
+  const oldForm = document.getElementById('pardot-form');
+  if (oldForm) oldForm.remove();
+  
+  // 创建新表单
+  const form = document.createElement('form');
+  form.id = 'pardot-form';
+  form.method = 'POST';
+  form.action = CONFIG.PARDOT_URL;
+  form.target = '_blank';
+  form.style.display = 'none';
+  
+  // 添加字段
+  CONFIG.FIELDS.forEach(f => {
     const val = (record[f] || '').trim();
-    if (!val) return null;
-    const encoded = encodeURIComponent(val)
-      .replace(/%40/g, '@')
-      .replace(/%2E/g, '.')
-      .replace(/%2D/g, '-')
-      .replace(/%5F/g, '_');
-    return f + '=' + encoded;
-  }).filter(Boolean).join('&');
-  
-  // 发送到 API 获取调试信息
-  const loading = document.getElementById('loading');
-  const loadingText = document.getElementById('loading-text');
-  const loadingSub = document.getElementById('loading-sub');
-  
-  loading.classList.remove('hidden');
-  loadingText.textContent = '正在提交...';
-  loadingSub.textContent = '请稍候';
-  
-  try {
-    const response = await fetch('/api/pardot-submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
-    });
-    
-    const result = await response.json();
-    loading.classList.add('hidden');
-    
-    console.log('Pardot Result:', result);
-    
-    if (result.success) {
-      alert(`✅ 提交成功！\n\n📧 Email: ${result.submitted_email}\n\n数据已发送到 Pardot。`);
-      closeFormModal();
-    } else {
-      // 显示详细错误信息
-      let errorMsg = `❌ 提交失败\n\n`;
-      errorMsg += `状态码: ${result.status}\n`;
-      if (result.location) errorMsg += `跳转到: ${result.location}\n`;
-      if (result.pardot_response) {
-        errorMsg += `\nPardot 返回:\n${result.pardot_response.substring(0, 300)}`;
-      }
-      alert(errorMsg);
+    if (val) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = f;
+      input.value = val;
+      form.appendChild(input);
     }
-    
-  } catch (err) {
-    loading.classList.add('hidden');
+  });
+  
+  document.body.appendChild(form);
+  form.submit();
+  
+  alert('✅ 已提交到 Pardot！\n\n请在新窗口确认结果。');
+  closeFormModal();
+}
     alert('提交失败：' + err.message);
   }
 }
@@ -1054,27 +1037,38 @@ async function submitAllToPardot() {
   
   state.records.forEach((record, i) => {
     setTimeout(() => {
-      // 手动构建参数（不编码 @）
-      const params = CONFIG.FIELDS.map(f => {
-        const val = (record[f] || '').trim();
-        if (!val) return null;
-        const encoded = encodeURIComponent(val)
-          .replace(/%40/g, '@')
-          .replace(/%2E/g, '.')
-          .replace(/%2D/g, '-')
-          .replace(/%5F/g, '_');
-        return f + '=' + encoded;
-      }).filter(Boolean).join('&');
+      // 创建隐藏表单 POST 提交
+      const formId = 'pardot-form-' + i;
+      let form = document.getElementById(formId);
+      if (form) form.remove();
       
-      const submitUrl = CONFIG.PARDOT_URL + '?' + params;
-      window.open(submitUrl, '_blank');
+      form = document.createElement('form');
+      form.id = formId;
+      form.method = 'POST';
+      form.action = CONFIG.PARDOT_URL;
+      form.target = '_blank';
+      form.style.display = 'none';
+      
+      CONFIG.FIELDS.forEach(f => {
+        const val = (record[f] || '').trim();
+        if (val) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = f;
+          input.value = val;
+          form.appendChild(input);
+        }
+      });
+      
+      document.body.appendChild(form);
+      form.submit();
       
       if (i === count - 1) {
         setTimeout(() => {
           alert(`已提交 ${count} 条记录到 Pardot！\n\n请逐个检查新窗口确认提交成功。`);
         }, 500);
       }
-    }, i * 1500);
+    }, i * 2000);  // 间隔 2 秒
   });
 }
 
