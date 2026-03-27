@@ -3,331 +3,202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="mobile-web-app-capable" content="yes">
   <title>展会客户信息识别与整理</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .wx-work { height: 100vh; overflow-y: auto; overscroll-behavior: contain; }
-    .wx-work::-webkit-scrollbar { width: 0; height: 0; }
-    .upload-zone { border: 2px dashed #cbd5e1; transition: all 0.2s; }
-    .upload-zone.drag { border-color: #3b82f6; background: #eff6ff; }
-    .upload-zone:active { transform: scale(0.98); }
-    .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; transition: all 0.2s; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
-    .btn-primary:hover { box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn-secondary { background: #f1f5f9; color: #475569; }
-    .btn-danger { background: #fee2e2; color: #dc2626; }
-    .btn-sm { padding: 0.5rem 0.75rem; min-height: 36px; font-size: 0.875rem; }
-    .input { width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem; background: #fff; }
-    .input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-    .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
-    .badge { display: inline-flex; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-    .preview-item { position: relative; aspect-ratio: 1; }
-    .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e2e8f0; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
-    .modal { background: white; width: 100%; max-height: 90vh; border-radius: 1rem 1rem 0 0; overflow: hidden; display: flex; flex-direction: column; }
-    .modal-header { padding: 1rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
-    .modal-body { flex: 1; overflow-y: auto; padding: 1rem; }
-    .modal-footer { padding: 1rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.75rem; }
-    .tab { flex: 1; padding: 0.75rem; text-align: center; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; }
-    .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-    .field-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; }
-    .field-value { font-weight: 500; }
-    pre { white-space: pre-wrap; word-wrap: break-word; font-size: 0.75rem; }
-    .stat-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; padding: 16px; position: sticky; top: 0; z-index: 20; }
+    .header h1 { font-size: 18px; font-weight: bold; }
+    .header button { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; }
+    .nav { background: white; display: flex; border-bottom: 1px solid #e2e8f0; position: sticky; top: 60px; z-index: 20; }
+    .nav button { flex: 1; padding: 12px; background: none; border: none; font-size: 14px; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; }
+    .nav button.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+    .page { padding: 16px; display: none; }
+    .page.active { display: block; }
+    .upload-zone { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; background: white; margin-bottom: 16px; }
+    .upload-zone .icon { font-size: 48px; margin-bottom: 8px; }
+    .upload-zone p { color: #475569; font-weight: 500; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; border: none; font-size: 14px; }
+    .btn-primary { background: #1d4ed8; color: white; }
+    .btn-secondary { background: white; color: #475569; border: 1px solid #e2e8f0; }
+    .btn-success { background: #16a34a; color: white; }
+    .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .btn-sm { padding: 6px 10px; font-size: 13px; }
+    .btn-lg { padding: 14px 20px; font-size: 16px; }
+    .w-full { width: 100%; }
+    .hidden { display: none !important; }
+    .customer-card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; overflow: hidden; }
+    .customer-card-header { background: linear-gradient(135deg, #1d4ed8, #1e40af); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .customer-card-header .title { font-weight: 600; }
+    .customer-card-body { padding: 16px; }
+    .data-preview { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .data-preview h4 { font-size: 13px; color: #92400e; margin-bottom: 8px; }
+    .data-preview .row { display: flex; gap: 12px; margin-bottom: 4px; font-size: 13px; }
+    .data-preview .label { color: #a16207; min-width: 50px; }
+    .data-preview .value { color: #ca8a04; font-weight: 500; }
+    .form-container { background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+    .form-container iframe { width: 100%; height: 450px; border: none; display: block; }
+    .submit-section { border-top: 1px solid #f1f5f9; padding: 12px 16px; }
+    .submit-section p { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 6px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+    .empty-state .icon { font-size: 56px; margin-bottom: 12px; }
+    .img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+    .img-grid .img-item { position: relative; aspect-ratio: 1; }
+    .img-grid .img-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; }
+    .img-grid .img-item .del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; }
+    .loading { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .loading.show { display: flex; }
+    .loading-box { background: white; padding: 32px; border-radius: 16px; text-align: center; max-width: 280px; }
+    .loading-box .icon { font-size: 48px; margin-bottom: 12px; }
+    .loading-box p { font-weight: 600; font-size: 16px; }
+    .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 300; display: none; }
+    .toast.show { display: block; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: white; width: 100%; max-width: 480px; border-radius: 16px; overflow: hidden; }
+    .modal-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 16px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
   </style>
 </head>
-<body class="bg-slate-50">
-  <div id="app" class="wx-work">
-    <header class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 sticky top-0 z-20">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">📇</div>
-        <div>
-          <h1 class="font-bold text-lg">展会客户信息识别工具</h1>
-          <p class="text-blue-100 text-xs">Exhibition Lead Recognition</p>
-        </div>
+<body>
+  <header class="header">
+    <h1>📇 展会客户信息识别</h1>
+    <button onclick="openSettings()">⚙️</button>
+  </header>
+
+  <nav class="nav">
+    <button class="active" data-tab="upload" onclick="switchTab('upload')">📤 上传识别</button>
+    <button data-tab="records" onclick="switchTab('records')">📋 客户记录</button>
+  </nav>
+
+  <main>
+    <section id="page-upload" class="page active">
+      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="icon">📸</div>
+        <p>点击上传 / 拖拽图片</p>
       </div>
-      <button onclick="openSettings()" class="absolute top-4 right-4 w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-lg hover:bg-white/30 transition">⚙️</button>
-    </header>
-
-    <nav class="bg-white flex sticky top-[72px] z-20 shadow-sm">
-      <button class="tab active" data-tab="upload">📤 上传</button>
-      <button class="tab" data-tab="records">📋 记录</button>
-      <button class="tab" data-tab="export">📥 导出</button>
-    </nav>
-
-    <main class="pb-24">
-      <section id="page-upload" class="p-4 space-y-4">
-        <div id="drop-zone" class="upload-zone rounded-2xl p-8 text-center cursor-pointer bg-white">
-          <div class="text-5xl mb-3">📸</div>
-          <p class="text-slate-600 font-medium">点击上传 / 拖拽图片</p>
-          <p class="text-slate-400 text-sm mt-1">支持名片、Memo、登记表</p>
-          <p class="text-slate-300 text-xs mt-2">JPG / PNG / WEBP</p>
-          <input type="file" id="file-input" accept="image/*" multiple class="hidden">
-        </div>
-
-        <div class="flex gap-2">
-          <button id="btn-camera" class="btn btn-primary flex-1">📷 拍照上传</button>
-          <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
-          <button id="btn-gallery" class="btn btn-secondary flex-1">🖼️ 相册选择</button>
-          <button id="btn-clear-all" class="btn btn-secondary hidden" onclick="clearAll()">🗑️</button>
-        </div>
-
-        <div id="preview-section" class="hidden">
-          <div class="card p-4">
-            <div class="flex justify-between items-center mb-3">
-              <span class="font-medium text-slate-700">已上传 <span id="img-count" class="text-blue-600">0</span> 张图片</span>
-            </div>
-            <div id="preview-grid" class="preview-grid"></div>
-          </div>
-        </div>
-
-        <button id="btn-recognize" class="btn btn-primary w-full text-lg hidden" onclick="startRecognize()">🧠 开始识别客户信息</button>
-
-        <div class="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
-          <h3 class="font-semibold mb-2">💡 使用说明</h3>
-          <ul class="space-y-1 text-blue-700">
-            <li>① 上传名片、Memo 或客户登记表照片</li>
-            <li>② 系统自动识别客户信息</li>
-            <li>③ 支持手动校正识别结果</li>
-            <li>④ 导出 Excel 或提交到 Pardot</li>
-          </ul>
-        </div>
-      </section>
-
-      <section id="page-records" class="p-4 space-y-4 hidden">
-        <div id="records-empty" class="text-center py-16">
-          <div class="text-6xl mb-4">📋</div>
-          <p class="text-slate-500">暂无识别记录</p>
-          <button class="btn btn-primary mt-4" onclick="switchTab('upload')">去上传图片</button>
-        </div>
-        <div id="records-list" class="space-y-4 hidden"></div>
-      </section>
-
-      <section id="page-export" class="p-4 space-y-4 hidden">
-        <div id="export-empty" class="text-center py-16">
-          <div class="text-6xl mb-4">📥</div>
-          <p class="text-slate-500">暂无数据可导出</p>
-        </div>
-        <div id="export-panel" class="hidden space-y-4">
-          <div class="grid grid-cols-2 gap-3">
-            <button class="btn btn-primary flex-col py-6" onclick="doExportExcel()">
-              <span class="text-2xl">📊</span>
-              <span class="text-sm mt-1">导出 Excel</span>
-            </button>
-            <button class="btn btn-secondary flex-col py-6" onclick="showAllFormData()">
-              <span class="text-2xl">📝</span>
-              <span class="text-sm mt-1">Form 数据</span>
-            </button>
-          </div>
-          <div class="card p-4">
-            <h3 class="font-semibold text-slate-700 mb-3">📊 数据统计</h3>
-            <div id="stats-list"></div>
-          </div>
-          <button class="btn btn-secondary w-full" onclick="showJson()">📄 查看 JSON 数据</button>
-        </div>
-      </section>
-    </main>
-
-    <div id="loading" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden">
-      <div class="bg-white rounded-2xl p-8 text-center max-w-xs">
-        <div class="text-5xl mb-4">🧠</div>
-        <p id="loading-text" class="font-semibold text-lg">识别中...</p>
-        <p id="loading-sub" class="text-slate-500 text-sm mt-1">正在分析图片内容</p>
-        <div class="mt-4 h-2 bg-slate-200 rounded-full overflow-hidden">
-          <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
-        </div>
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+      
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary w-full" onclick="document.getElementById('camera-input').click()">📷 拍照</button>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFiles(this.files)">
+        <button class="btn btn-secondary w-full" onclick="document.getElementById('gallery-input').click()">🖼️ 相册</button>
+        <input type="file" id="gallery-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
       </div>
+      
+      <div id="preview-section" class="hidden" style="margin-bottom:12px">
+        <span style="font-size:13px;font-weight:500">已上传 <span id="img-count">0</span> 张图片</span>
+        <div id="preview-grid" class="img-grid"></div>
+      </div>
+      
+      <button id="btn-recognize" class="btn btn-primary btn-lg w-full hidden" onclick="startRecognize()">🧠 开始识别</button>
+    </section>
+
+    <section id="page-records" class="page">
+      <div id="records-empty" class="empty-state">
+        <div class="icon">📋</div>
+        <p>暂无识别记录</p>
+      </div>
+      <div id="records-list"></div>
+    </section>
+  </main>
+
+  <div id="loading" class="loading">
+    <div class="loading-box">
+      <div class="icon">🧠</div>
+      <p id="loading-text">识别中...</p>
     </div>
+  </div>
 
-    <div id="settings-modal" class="modal-overlay hidden">
-      <div class="modal">
-        <div class="modal-header">
-          <span>⚙️ 模型设置</span>
-          <button onclick="closeSettings()" class="text-slate-400 text-xl">×</button>
+  <div id="toast" class="toast"></div>
+
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span>⚙️ 模型设置</span>
+        <button onclick="closeSettings()" style="background:none;border:none;font-size:24px;color:#94a3b8;cursor:pointer">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>🔑 API Key</label>
+          <input type="password" id="input-api-key" placeholder="sk-or-v1-..." autocomplete="off">
         </div>
-        <div class="modal-body space-y-4">
-          <div class="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
-            💡 推荐模型：<strong>google/gemini-2.0-flash-001</strong>（便宜快速）
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">🔑 API Key</label>
-            <input type="password" id="input-api-key" class="input" placeholder="sk-or-v1-..." autocomplete="off">
-            <p class="text-xs text-slate-400 mt-1">在 openrouter.ai/keys 获取</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">🤖 模型</label>
-            <select id="input-model" class="input">
-              <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash（推荐）</option>
-              <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
-              <option value="openai/gpt-4o">GPT-4o</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">🔄 识别模式</label>
-            <select id="input-mode" class="input">
-              <option value="mock">Mock 模拟数据</option>
-              <option value="real">真实模型识别</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label>🤖 模型</label>
+          <select id="input-model">
+            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
+            <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+          </select>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-danger flex-1" onclick="clearSettings()">清除设置</button>
-          <button class="btn btn-primary flex-1" onclick="saveSettings()">保存设置</button>
+        <div class="form-group">
+          <label>🔄 识别模式</label>
+          <select id="input-mode">
+            <option value="mock">Mock 模拟数据</option>
+            <option value="real">真实 AI 识别</option>
+          </select>
         </div>
       </div>
-    </div>
-
-    <div id="edit-modal" class="modal-overlay hidden">
-      <div class="modal">
-        <div class="modal-header">
-          <span id="edit-title">编辑记录</span>
-          <button onclick="closeEdit()" class="text-slate-400 text-xl">×</button>
-        </div>
-        <div class="modal-body" id="edit-body"></div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary flex-1" onclick="closeEdit()">取消</button>
-          <button class="btn btn-primary flex-1" onclick="saveEdit()">保存</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="form-modal" class="modal-overlay hidden">
-      <div class="modal">
-        <div class="modal-header">
-          <span>Form 提交数据</span>
-          <button onclick="closeFormModal()" class="text-slate-400 text-xl">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
-            ⚠️ 点击下方按钮打开 Pardot 表单页面
-          </div>
-          <div id="form-data-content"></div>
-        </div>
-        <div class="modal-footer flex-col gap-2">
-          <button class="btn btn-primary w-full text-base py-4" onclick="submitToPardot()">📮 打开 Pardot 表单</button>
-          <div class="flex gap-3 w-full">
-            <button class="btn btn-secondary flex-1" onclick="copyFormData()">📋 复制数据</button>
-            <button class="btn btn-secondary flex-1" onclick="closeFormModal()">关闭</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="json-modal" class="modal-overlay hidden">
-      <div class="modal">
-        <div class="modal-header">
-          <span>JSON 数据</span>
-          <button onclick="closeJson()" class="text-slate-400 text-xl">×</button>
-        </div>
-        <div class="modal-body">
-          <pre id="json-content" class="bg-slate-100 p-3 rounded-lg"></pre>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary flex-1" onclick="closeJson()">关闭</button>
-          <button class="btn btn-primary flex-1" onclick="copyJson()">📋 复制</button>
-        </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="clearSettings()" style="flex:1">清除</button>
+        <button class="btn btn-primary" onclick="saveSettings()" style="flex:1">保存</button>
       </div>
     </div>
   </div>
 
 <script>
 var CONFIG = {
-  PARDOT_URL: 'https://go.rifeng.com/l/900071/2026-03-26/3tbjg2',
-  FIELDS: ['Name', 'Title', 'email', 'Website', 'Address', 'Company', 'Continent', 'Nation', 'Phone', 'Mobile', 'TypeOfClients', 'InterestedIn', 'DemandDetails', 'salesman'],
-  FIELD_LABELS: { Name: '姓名', Title: '职位', email: '邮箱', Website: '网站', Address: '地址', Company: '公司', Continent: '洲别', Nation: '国家', Phone: '固话', Mobile: '手机', TypeOfClients: '客户类型', InterestedIn: '感兴趣产品', DemandDetails: '需求详情', salesman: '业务员' }
+  PARDOT_FORM_URL: 'https://go.rifeng.com/l/900071/2026-03-26/3tbjg2',
+  FIELD_MAP: {
+    'Name': 'Name',
+    'Company': 'Company',
+    'email': 'Email',
+    'Website': 'Website',
+    'Title': 'Job Title',
+    'Nation': 'Country',
+    'Continent': 'Continent',
+    'Address': 'Address',
+    'Phone': 'Phone',
+    'Mobile': 'Mobile',
+    'InterestedIn': 'Interested In',
+    'TypeOfClients': 'Type of Client',
+    'DemandDetails': 'Demand details'
+  }
 };
 
-var state = { images: [], records: [], currentEditId: null, currentFormRecord: null };
+var state = { images: [], records: [] };
 var modelConfig = { apiKey: '', model: 'google/gemini-2.0-flash-001', mode: 'mock' };
 
 function loadSettings() {
   try {
-    var saved = localStorage.getItem('exhibition_leads_settings');
-    if (saved) { var parsed = JSON.parse(saved); for (var k in parsed) modelConfig[k] = parsed[k]; }
+    var s = localStorage.getItem('exhibition_leads_settings');
+    if (s) { var p = JSON.parse(s); for (var k in p) modelConfig[k] = p[k]; }
   } catch(e) {}
 }
+loadSettings();
 
-function openSettings() {
-  loadSettings();
-  document.getElementById('input-api-key').value = modelConfig.apiKey;
-  document.getElementById('input-model').value = modelConfig.model;
-  document.getElementById('input-mode').value = modelConfig.mode;
-  document.getElementById('settings-modal').classList.remove('hidden');
-}
-
-function saveSettings() {
-  modelConfig.apiKey = document.getElementById('input-api-key').value.trim();
-  modelConfig.model = document.getElementById('input-model').value;
-  modelConfig.mode = document.getElementById('input-mode').value;
-  localStorage.setItem('exhibition_leads_settings', JSON.stringify(modelConfig));
-  closeSettings();
-  alert('设置已保存');
-}
-
-function clearSettings() {
-  if (!confirm('确定清除所有设置？')) return;
-  localStorage.removeItem('exhibition_leads_settings');
-  modelConfig = { apiKey: '', model: 'google/gemini-2.0-flash-001', mode: 'mock' };
-  document.getElementById('input-api-key').value = '';
-  document.getElementById('input-model').value = modelConfig.model;
-  document.getElementById('input-mode').value = modelConfig.mode;
-  alert('设置已清除');
-}
-
-function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+function openSettings() { loadSettings(); document.getElementById('input-api-key').value = modelConfig.apiKey; document.getElementById('input-model').value = modelConfig.model; document.getElementById('input-mode').value = modelConfig.mode; document.getElementById('settings-modal').classList.add('show'); }
+function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
+function saveSettings() { modelConfig.apiKey = document.getElementById('input-api-key').value.trim(); modelConfig.model = document.getElementById('input-model').value; modelConfig.mode = document.getElementById('input-mode').value; localStorage.setItem('exhibition_leads_settings', JSON.stringify(modelConfig)); closeSettings(); showToast('设置已保存'); }
+function clearSettings() { if (!confirm('清除所有设置？')) return; localStorage.removeItem('exhibition_leads_settings'); modelConfig = { apiKey: '', model: 'google/gemini-2.0-flash-001', mode: 'mock' }; document.getElementById('input-api-key').value = ''; document.getElementById('input-model').value = modelConfig.model; document.getElementById('input-mode').value = modelConfig.mode; showToast('已清除'); }
 function isRealMode() { return modelConfig.mode === 'real' && modelConfig.apiKey; }
 function genId() { return 'r_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
-
-function escapeHtml(str) {
-  if (str == null) return '';
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function escapeAttr(str) {
-  if (str == null) return '';
-  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+function escapeHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2500); }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
-  document.querySelectorAll('section').forEach(function(s) { s.classList.add('hidden'); });
-  document.getElementById('page-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.nav button').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === tab); });
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.toggle('active', p.id === 'page-' + tab); });
   if (tab === 'records') renderRecords();
-  if (tab === 'export') renderExport();
 }
 
-document.querySelectorAll('.tab').forEach(function(tab) {
-  tab.addEventListener('click', function() { switchTab(tab.dataset.tab); });
-});
-
-var dropZone = document.getElementById('drop-zone');
-var fileInput = document.getElementById('file-input');
-var cameraInput = document.getElementById('camera-input');
-
-dropZone.addEventListener('click', function() { fileInput.click(); });
-dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('drag'); });
-dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('drag'); });
-dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
-fileInput.addEventListener('change', function(e) { handleFiles(e.target.files); });
-document.getElementById('btn-camera').addEventListener('click', function() { cameraInput.click(); });
-cameraInput.addEventListener('change', function(e) { handleFiles(e.target.files); });
-document.getElementById('btn-gallery').addEventListener('click', function() { fileInput.click(); });
-
 function handleFiles(files) {
-  Array.from(files).forEach(function(file) {
-    if (!file.type.startsWith('image/')) return;
-    var id = genId();
-    var url = URL.createObjectURL(file);
-    state.images.push({ id: id, file: file, url: url });
+  Array.from(files).forEach(function(f) {
+    if (!f.type.startsWith('image/')) return;
+    state.images.push({ id: genId(), file: f, url: URL.createObjectURL(f) });
   });
   updatePreview();
 }
@@ -339,291 +210,284 @@ function removeImage(id) {
   updatePreview();
 }
 
-function clearAll() {
-  state.images.forEach(function(i) { URL.revokeObjectURL(i.url); });
-  state.images = [];
-  updatePreview();
-}
-
 function updatePreview() {
-  var count = state.images.length;
-  document.getElementById('preview-section').classList.toggle('hidden', count === 0);
-  document.getElementById('btn-recognize').classList.toggle('hidden', count === 0);
-  document.getElementById('btn-clear-all').classList.toggle('hidden', count === 0);
-  document.getElementById('img-count').textContent = count;
-  var grid = document.getElementById('preview-grid');
-  grid.innerHTML = state.images.map(function(img, i) {
-    return '<div class="preview-item"><img src="' + img.url + '" alt="图片' + (i + 1) + '"><button onclick="removeImage(\'' + img.id + '\')" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">×</button><span class="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 rounded">' + (i + 1) + '</span></div>';
+  var n = state.images.length;
+  document.getElementById('preview-section').classList.toggle('hidden', n === 0);
+  document.getElementById('btn-recognize').classList.toggle('hidden', n === 0);
+  document.getElementById('img-count').textContent = n;
+  document.getElementById('preview-grid').innerHTML = state.images.map(function(img, i) {
+    return '<div class="img-item"><img src="' + img.url + '"><button class="del" onclick="removeImage(\'' + img.id + '\')">×</button></div>';
   }).join('');
 }
 
-var RECOGNITION_PROMPT = '你是一个专业的展会客户信息识别助手。请仔细分析上传的图片，识别其中的客户信息。\n【任务】从名片、展会Memo、客户登记表等图片中提取结构化客户信息。\n【字段定义】\n- Name: 联系人姓名\n- Title: 职位\n- email: 标准邮箱格式\n- Website: 公司官网\n- Address: 地址信息\n- Company: 公司名称\n- Continent: 洲别\n- Nation: 国家英文名称\n- Phone: 固定电话\n- Mobile: 手机号\n- TypeOfClients: 客户类型\n- InterestedIn: 感兴趣的产品\n- DemandDetails: 详细需求\n- salesman: 业务员姓名（仅从 Filled by 字段提取）\n\n【严格规则】\n1. 只提取图片中真实可见的信息，不得猜测\n2. 如无法确认某字段，必须返回空字符串\n3. salesman 只能来自图片中明确出现的 Filled by 字段\n4. 返回严格 JSON 数组格式';
+var dz = document.querySelector('.upload-zone');
+dz.addEventListener('dragover', function(e) { e.preventDefault(); });
+dz.addEventListener('drop', function(e) { e.preventDefault(); handleFiles(e.dataTransfer.files); });
 
-function fileToBase64(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function() { resolve(reader.result.split(',')[1]); };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function callOpenRouter(imageFiles) {
-  var url = 'https://openrouter.ai/api/v1/chat/completions';
-  var imageContents = [];
-  for (var i = 0; i < imageFiles.length; i++) {
-    var base64 = await fileToBase64(imageFiles[i]);
-    imageContents.push({ type: 'image_url', image_url: { url: 'data:' + imageFiles[i].type + ';base64,' + base64 } });
-  }
-  var body = {
-    model: modelConfig.model,
-    messages: [{ role: 'user', content: [{ type: 'text', text: RECOGNITION_PROMPT }].concat(imageContents) }],
-    max_tokens: 4096,
-    temperature: 0.1
-  };
-  var response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + modelConfig.apiKey, 'HTTP-Referer': window.location.href, 'X-Title': 'Exhibition Lead Recognition Tool' },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) { var errText = await response.text(); throw new Error('API 错误 (' + response.status + '): ' + errText); }
-  var data = await response.json();
-  var content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '';
-  var parsed;
-  try { parsed = JSON.parse(content); }
-  catch(e) {
-    var jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) { parsed = JSON.parse(jsonMatch[1].trim()); }
-    else { throw new Error('无法解析 JSON'); }
-  }
-  if (!Array.isArray(parsed)) parsed = [parsed];
-  return parsed.map(function(item) {
-    var record = { id: genId() };
-    CONFIG.FIELDS.forEach(function(f) { record[f] = String(item[f] || '').trim(); });
-    return record;
-  });
-}
-
-var MOCK_DATA = {
-  names: ['Michael Brown', 'Sarah Johnson', 'Hans Schmidt', 'Yuki Yamamoto', 'Ahmed Al-Rashid'],
-  titles: ['Sales Manager', 'CEO', 'Purchasing Director', 'Technical Engineer', 'Marketing Manager'],
+var MOCK = {
+  names: ['Michael Brown', 'Sarah Johnson', 'Hans Schmidt', 'Yuki Yamamoto', 'Ahmed Al-Rashid', 'Marie Dupont', 'Chen Wei', 'Anna Kowalski'],
+  titles: ['Sales Manager', 'CEO', 'Purchasing Director', 'Engineer', 'Marketing Manager', 'Product Manager'],
   companies: ['Global Trade Co.', 'Pacific Solutions', 'Euro Asia Ltd.', 'Sunrise Technologies', 'Metro Construct GmbH'],
   countries: ['Germany', 'United States', 'China', 'Japan', 'France', 'Singapore', 'UAE', 'Australia'],
-  continents: { 'Germany': 'Europe', 'France': 'Europe', 'United States': 'North America', 'China': 'Asia', 'Japan': 'Asia', 'Singapore': 'Asia', 'UAE': 'Asia', 'Australia': 'Oceania' },
+  continents: { Germany: 'Europe', France: 'Europe', 'United States': 'North America', China: 'Asia', Japan: 'Asia', Singapore: 'Asia', UAE: 'Asia', Australia: 'Oceania' },
   types: ['Distributor', 'Contractor', 'Wholesaler', 'Retailer', 'OEM'],
-  products: ['PEX Pipe', 'PE-RT Pipe', 'PP-R Pipe', 'Floor Heating System', 'Water Supply System'],
-  salesmen: ['David Chen', 'Amy Zhang', 'Michael Wang', 'Sophie Liu', 'James Wu']
+  products: ['PEX Pipe', 'PE-RT Pipe', 'Floor Heating', 'Water Supply', 'Solar Heating']
 };
 
-function generateMockRecord() {
-  var name = MOCK_DATA.names[Math.floor(Math.random() * MOCK_DATA.names.length)];
-  var country = MOCK_DATA.countries[Math.floor(Math.random() * MOCK_DATA.countries.length)];
-  var hasSalesman = Math.random() > 0.3;
-  var maybeEmpty = function(val) { return Math.random() > 0.15 ? val : ''; };
+function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+function maybe(v) { return Math.random() > 0.2 ? v : ''; }
+
+function generateMock() {
+  var name = rnd(MOCK.names);
+  var country = rnd(MOCK.countries);
   return {
     id: genId(),
     Name: name,
-    Title: maybeEmpty(MOCK_DATA.titles[Math.floor(Math.random() * MOCK_DATA.titles.length)]),
-    email: name.toLowerCase().split(' ')[0] + '@' + ['gmail.com', 'outlook.com', 'company.co'][Math.floor(Math.random() * 3)],
-    Website: 'www.example.com',
+    Title: maybe(rnd(MOCK.titles)),
+    email: name.toLowerCase().split(' ')[0] + '@' + rnd(['gmail.com', 'outlook.com', 'company.co']),
+    Website: 'www.' + name.toLowerCase().replace(/ /g,'') + '.com',
     Address: country,
-    Company: MOCK_DATA.companies[Math.floor(Math.random() * MOCK_DATA.companies.length)],
-    Continent: MOCK_DATA.continents[country],
+    Company: rnd(MOCK.companies),
+    Continent: MOCK.continents[country],
     Nation: country,
-    Phone: '+1 23456789',
-    Mobile: '+86 12345678901',
-    TypeOfClients: MOCK_DATA.types[Math.floor(Math.random() * MOCK_DATA.types.length)],
-    InterestedIn: MOCK_DATA.products[Math.floor(Math.random() * MOCK_DATA.products.length)],
-    DemandDetails: 'Interested in bulk order',
-    salesman: hasSalesman ? MOCK_DATA.salesmen[Math.floor(Math.random() * MOCK_DATA.salesmen.length)] : ''
+    Phone: '+' + (100 + Math.floor(Math.random() * 900)) + ' ' + Math.floor(Math.random() * 90000000),
+    Mobile: '+' + (100 + Math.floor(Math.random() * 900)) + ' ' + Math.floor(Math.random() * 900000000),
+    TypeOfClients: rnd(MOCK.types),
+    InterestedIn: rnd(MOCK.products),
+    DemandDetails: 'Interested in bulk order'
   };
 }
 
+async function callAI(files) {
+  var RECOGNITION_PROMPT = 'Extract customer info from business card/form images. Return JSON array with fields: Name, Title, email, Website, Address, Company, Continent, Nation, Phone, Mobile, TypeOfClients, InterestedIn, DemandDetails. Use ONLY these field names in English. Return valid JSON array only.';
+  
+  var imageContents = [];
+  for (var i = 0; i < files.length; i++) {
+    var base64 = await new Promise(function(resolve, reject) {
+      var r = new FileReader();
+      r.onload = function() { resolve(r.result.split(',')[1]); };
+      r.onerror = reject;
+      r.readAsDataURL(files[i]);
+    });
+    imageContents.push({ type: 'image_url', image_url: { url: 'data:' + files[i].type + ';base64,' + base64 } });
+  }
+  
+  var resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + modelConfig.apiKey, 'HTTP-Referer': location.href, 'X-Title': 'Exhibition Lead Tool' },
+    body: JSON.stringify({ model: modelConfig.model, messages: [{ role: 'user', content: [{ type: 'text', text: RECOGNITION_PROMPT }].concat(imageContents) }], max_tokens: 4096 })
+  });
+  
+  if (!resp.ok) throw new Error('API error ' + resp.status);
+  var data = await resp.json();
+  var content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '';
+  
+  var parsed;
+  try { parsed = JSON.parse(content); }
+  catch(e) {
+    var m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (m) { try { parsed = JSON.parse(m[1].trim()); } catch(e2) {} }
+    if (!parsed) { m = content.match(/\[[\s\S]*\]/); if (m) { try { parsed = JSON.parse(m[0]); } catch(e3) {} } }
+    if (!parsed) throw new Error('Cannot parse JSON');
+  }
+  if (!Array.isArray(parsed)) parsed = [parsed];
+  
+  return parsed.map(function(item) {
+    var r = { id: genId() };
+    ['Name', 'Title', 'email', 'Website', 'Address', 'Company', 'Continent', 'Nation', 'Phone', 'Mobile', 'TypeOfClients', 'InterestedIn', 'DemandDetails'].forEach(function(f) { r[f] = String(item[f] || '').trim(); });
+    return r;
+  });
+}
+
 async function startRecognize() {
-  if (state.images.length === 0) { alert('请先上传图片'); return; }
-  if (modelConfig.mode === 'real' && !modelConfig.apiKey) { alert('请先在设置中配置 API Key'); openSettings(); return; }
+  if (state.images.length === 0) { alert('Please upload images first'); return; }
+  if (isRealMode()) { if (!confirm('Use real AI model? (will consume API credits)')) return; }
   
-  var loading = document.getElementById('loading');
-  var progressBar = document.getElementById('progress-bar');
-  var loadingText = document.getElementById('loading-text');
-  var loadingSub = document.getElementById('loading-sub');
-  
-  loading.classList.remove('hidden');
-  var progress = 0;
-  var progressInterval = setInterval(function() {
-    progress += Math.random() * 10;
-    if (progress > 90) progress = 90;
-    progressBar.style.width = progress + '%';
-  }, 300);
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('loading-text').textContent = isRealMode() ? 'AI recognizing...' : 'Generating data...';
   
   try {
+    var records;
     if (isRealMode()) {
-      loadingText.textContent = '识别中...';
-      loadingSub.textContent = '正在调用 ' + modelConfig.model;
-      var files = state.images.map(function(i) { return i.file; });
-      state.records = await callOpenRouter(files);
+      records = await callAI(state.images.map(function(i) { return i.file; }));
     } else {
-      loadingText.textContent = '识别中...';
-      loadingSub.textContent = 'Mock 模拟模式';
-      await new Promise(function(r) { setTimeout(r, 2000); });
-      state.records = state.images.map(function() { return generateMockRecord(); });
+      await new Promise(function(r) { setTimeout(r, 1800); });
+      records = state.images.map(function() { return generateMock(); });
     }
-    clearInterval(progressInterval);
-    progressBar.style.width = '100%';
+    
     setTimeout(function() {
-      loading.classList.add('hidden');
-      progressBar.style.width = '0%';
+      state.records = records;
+      document.getElementById('loading').classList.remove('show');
       switchTab('records');
-    }, 500);
+      showToast('Recognition complete! ' + records.length + ' records');
+    }, 400);
   } catch(err) {
-    clearInterval(progressInterval);
-    progressBar.style.width = '0%';
-    loading.classList.add('hidden');
-    alert('识别失败: ' + (err.message || '未知错误'));
+    document.getElementById('loading').classList.remove('show');
+    alert('Recognition failed: ' + (err.message || 'Unknown error'));
   }
 }
 
 function renderRecords() {
   var empty = document.getElementById('records-empty');
   var list = document.getElementById('records-list');
-  if (state.records.length === 0) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
-  empty.classList.add('hidden');
-  list.classList.remove('hidden');
-  list.innerHTML = state.records.map(function(r, i) {
-    return '<div class="card p-4"><div class="flex justify-between items-start mb-3"><span class="badge badge-blue">客户 ' + (i + 1) + '</span><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editRecord(\'' + r.id + '\')">✏️ 编辑</button><button class="btn btn-sm btn-secondary" onclick="showFormFor(\'' + r.id + '\')">📝 Form</button><button class="btn btn-sm btn-danger" onclick="deleteRecord(\'' + r.id + '\')">🗑️</button></div></div><div class="grid grid-cols-2 gap-2 text-sm">' + renderQuickView(r) + '</div></div>';
-  }).join('');
-}
-
-function renderQuickView(r) {
-  var fields = ['Name', 'Company', 'email', 'Nation', 'InterestedIn'];
-  var html = fields.map(function(f) {
-    return '<div class="bg-slate-50 rounded-lg p-2"><div class="text-xs text-slate-400">' + CONFIG.FIELD_LABELS[f] + '</div><div class="font-medium truncate">' + (r[f] ? escapeHtml(r[f]) : '<span class="text-slate-300">-</span>') + '</div></div>';
-  }).join('');
-  if (r.salesman) {
-    html += '<div class="bg-green-50 rounded-lg p-2 col-span-2 border border-green-200"><div class="text-xs text-green-600">⭐ ' + CONFIG.FIELD_LABELS.salesman + '</div><div class="font-medium text-green-700">' + escapeHtml(r.salesman) + '</div></div>';
+  
+  if (state.records.length === 0) {
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
   }
-  return html;
-}
-
-function editRecord(id) {
-  state.currentEditId = id;
-  var record = state.records.find(function(r) { return r.id === id; });
-  if (!record) return;
-  var body = document.getElementById('edit-body');
-  body.innerHTML = CONFIG.FIELDS.map(function(f) {
-    return '<div class="mb-3"><label class="block text-sm font-medium text-slate-700 mb-1">' + CONFIG.FIELD_LABELS[f] + (f === 'email' ? ' ⭐' : '') + '</label>' + (f === 'DemandDetails' || f === 'Address' ? '<textarea class="input" rows="2" id="edit-' + f + '">' + escapeHtml(record[f]) + '</textarea>' : '<input type="' + (f === 'email' ? 'email' : 'text') + '" class="input" id="edit-' + f + '" value="' + escapeAttr(record[f]) + '">') + '</div>';
-  }).join('');
-  document.getElementById('edit-title').textContent = '编辑客户记录';
-  document.getElementById('edit-modal').classList.remove('hidden');
-}
-
-function saveEdit() {
-  var record = state.records.find(function(r) { return r.id === state.currentEditId; });
-  if (!record) return;
-  CONFIG.FIELDS.forEach(function(f) {
-    var el = document.getElementById('edit-' + f);
-    if (el) record[f] = el.value;
-  });
-  closeEdit();
-  renderRecords();
-}
-
-function closeEdit() { document.getElementById('edit-modal').classList.add('hidden'); state.currentEditId = null; }
-
-function deleteRecord(id) { if (confirm('确定删除这条记录？')) { state.records = state.records.filter(function(r) { return r.id !== id; }); renderRecords(); } }
-
-function renderExport() {
-  var hasData = state.records.length > 0;
-  document.getElementById('export-empty').classList.toggle('hidden', hasData);
-  document.getElementById('export-panel').classList.toggle('hidden', !hasData);
-  if (hasData) {
-    document.getElementById('stats-list').innerHTML = '<div class="stat-item"><span class="text-slate-500">客户总数</span><span class="font-medium">' + state.records.length + '</span></div><div class="stat-item"><span class="text-slate-500">有业务员信息</span><span class="font-medium text-green-600">' + state.records.filter(function(r) { return r.salesman; }).length + '</span></div><div class="stat-item"><span class="text-slate-500">有邮箱信息</span><span class="font-medium">' + state.records.filter(function(r) { return r.email; }).length + '</span></div>';
-  }
-}
-
-function doExportExcel() {
-  if (state.records.length === 0) { alert('没有数据可导出'); return; }
-  var wb = XLSX.utils.book_new();
-  var header = CONFIG.FIELDS;
-  var rows = state.records.map(function(r) { return CONFIG.FIELDS.map(function(f) { return r[f] || ''; }); });
-  var ws = XLSX.utils.aoa_to_sheet([header].concat(rows));
-  ws['!cols'] = CONFIG.FIELDS.map(function() { return { wch: 18 }; });
-  XLSX.utils.book_append_sheet(wb, ws, '客户信息');
-  var date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  XLSX.writeFile(wb, 'exhibition_leads_' + date + '.xlsx');
-}
-
-function showJson() { document.getElementById('json-content').textContent = JSON.stringify(state.records, null, 2); document.getElementById('json-modal').classList.remove('hidden'); }
-function closeJson() { document.getElementById('json-modal').classList.add('hidden'); }
-function copyJson() { navigator.clipboard.writeText(JSON.stringify(state.records, null, 2)); alert('JSON 已复制'); }
-
-function showFormFor(id) { var record = state.records.find(function(r) { return r.id === id; }); if (record) showFormData(record); }
-function showAllFormData() { if (state.records.length > 0) showFormData(state.records[0]); }
-
-function showFormData(record) {
-  state.currentFormRecord = record;
-  var content = document.getElementById('form-data-content');
-  content.innerHTML = CONFIG.FIELDS.map(function(f) {
-    return '<div class="flex text-sm py-2 border-b border-slate-100"><span class="w-28 shrink-0 text-slate-500">' + f + '</span><span class="flex-1 break-all ' + (record[f] ? 'text-slate-800' : 'text-slate-300') + '">' + (escapeHtml(record[f]) || '(空)') + '</span></div>';
-  }).join('');
-  document.getElementById('form-modal').classList.remove('hidden');
-}
-
-function closeFormModal() { document.getElementById('form-modal').classList.add('hidden'); state.currentFormRecord = null; }
-
-function generateFormEncoded(record) {
-  var parts = [];
-  CONFIG.FIELDS.forEach(function(f) { if (record[f]) parts.push(f + '=' + encodeURIComponent(record[f])); });
-  return parts.join('&');
-}
-
-function copyFormData() { if (state.currentFormRecord) { navigator.clipboard.writeText(generateFormEncoded(state.currentFormRecord)); alert('已复制'); } }
-
-function validateBeforeSubmit(record) {
-  if (!record.email || record.email.trim() === '') return { valid: false, msg: '邮箱为必填字段' };
-  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(record.email.trim())) return { valid: false, msg: '邮箱格式不正确' };
-  return { valid: true };
-}
-
-function submitToPardot() {
-  if (!state.currentFormRecord) { alert('没有可提交的数据'); return; }
-  var validation = validateBeforeSubmit(state.currentFormRecord);
-  if (!validation.valid) { alert(validation.msg); return; }
-  if (!confirm('确定要提交到 Pardot 吗？')) return;
   
-  var record = state.currentFormRecord;
-  var parts = [];
-  CONFIG.FIELDS.forEach(function(f) { if (record[f] && record[f].trim()) parts.push(f + '=' + encodeURIComponent(record[f])); });
-  var submitUrl = CONFIG.PARDOT_URL + '?' + parts.join('&');
-  
-  // 新窗口打开 Pardot 表单
-  window.open(CONFIG.PARDOT_URL, '_blank');
-  
-  alert('已打开 Pardot 表单页面！\n\n请在新窗口中手动填写或复制已识别的数据后提交。\n\n已复制数据到剪贴板，可以直接粘贴。', '复制数据', navigator.clipboard.writeText(parts.join('&')));
-  copyFormData();
-  closeFormModal();
-}
-
-function submitAllToPardot() {
-  if (state.records.length === 0) { alert('没有可提交的记录'); return; }
-  if (!confirm('确定要提交全部 ' + state.records.length + ' 条记录到 Pardot 吗？')) return;
-  
-  state.records.forEach(function(record, i) {
-    setTimeout(function() {
-      var parts = [];
-      CONFIG.FIELDS.forEach(function(f) { if (record[f] && record[f].trim()) parts.push(f + '=' + encodeURIComponent(record[f])); });
-      var submitUrl = CONFIG.PARDOT_URL + '?' + parts.join('&');
-      window.open(CONFIG.PARDOT_URL, '_blank');
-      if (i === state.records.length - 1) {
-        setTimeout(function() { alert('已打开全部 ' + state.records.length + ' 个表单页面！'); }, 500);
+  empty.style.display = 'none';
+  list.innerHTML = state.records.map(function(rec, i) {
+    var params = [];
+    for (var internalField in CONFIG.FIELD_MAP) {
+      var pardotField = CONFIG.FIELD_MAP[internalField];
+      var value = rec[internalField];
+      if (value && String(value).trim()) {
+        params.push(pardotField + '=' + encodeURIComponent(String(value).trim()));
       }
-    }, i * 1500);
-  });
+    }
+    var formUrl = CONFIG.PARDOT_FORM_URL;
+    if (params.length > 0) {
+      formUrl += '?' + params.join('&');
+    }
+    
+    console.log('Record ' + i + ':', rec);
+    console.log('Generated URL:', formUrl);
+    
+    return '<div class="customer-card" id="card-' + rec.id + '">' +
+      '<div class="customer-card-header">' +
+        '<div class="title"><span>Customer ' + (i + 1) + '</span> ' + escapeHtml(rec.Company || rec.Name || '') + '</div>' +
+        '<div class="actions">' +
+          '<button class="btn btn-sm btn-danger" onclick="deleteRecord(\'' + rec.id + '\')">Delete</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="customer-card-body">' +
+        '<div class="data-preview">' +
+          '<h4>Recognized Data:</h4>' +
+          '<div class="row"><span class="label">Email:</span><span class="value">' + escapeHtml(rec.email || '(empty)') + '</span></div>' +
+          '<div class="row"><span class="label">Name:</span><span class="value">' + escapeHtml(rec.Name || '(empty)') + '</span></div>' +
+          '<div class="row"><span class="label">Company:</span><span class="value">' + escapeHtml(rec.Company || '(empty)') + '</span></div>' +
+          '<div class="row"><span class="label">Title:</span><span class="value">' + escapeHtml(rec.Title || '(empty)') + '</span></div>' +
+        '</div>' +
+        '<div class="form-container">' +
+          '<iframe id="form-iframe-' + rec.id + '" src="' + formUrl + '" style="width:100%;height:400px;border:none;display:block;background:white" onload="tryFillForm(\'' + rec.id + '\', ' + JSON.stringify(rec).replace(/'/g, "\\'") + ')"></iframe>' +
+        '</div>' +
+      '</div>' +
+      '<div class="submit-section">' +
+        '<button class="btn btn-success btn-lg w-full" onclick="submitToPardot(\'' + rec.id + '\')">Submit to Pardot</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
 
-// 初始化
-document.addEventListener('DOMContentLoaded', function() {
-  loadSettings();
-  if (!modelConfig.apiKey) console.log('未配置 API Key，使用 Mock 模式');
-});
+function tryFillForm(id, rec) {
+  var iframe = document.getElementById('form-iframe-' + id);
+  if (!iframe) return;
+  
+  setTimeout(function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc) return;
+      
+      var inputs = doc.querySelectorAll('input, textarea');
+      console.log('Found ' + inputs.length + ' fields in iframe');
+      
+      var fieldMatchers = {
+        'email': ['email', 'e-mail', 'mail'],
+        'Name': ['name', 'fullname', 'first_name', 'firstname'],
+        'Company': ['company', 'company_name', 'companyname'],
+        'Title': ['title', 'job_title', 'jobtitle', 'position'],
+        'Phone': ['phone', 'telephone', 'tel'],
+        'Mobile': ['mobile', 'cell', 'cellphone'],
+        'Website': ['website', 'web', 'url'],
+        'Address': ['address', 'location'],
+        'Nation': ['country', 'nation'],
+        'Continent': ['continent', 'area'],
+        'InterestedIn': ['interested', 'interest', 'product'],
+        'TypeOfClients': ['type', 'client_type', 'customer_type'],
+        'DemandDetails': ['demand', 'details', 'notes', 'remarks', 'memo']
+      };
+      
+      var filled = 0;
+      for (var fieldKey in fieldMatchers) {
+        var value = rec[fieldKey];
+        if (!value || !String(value).trim()) continue;
+        
+        var matchers = fieldMatchers[fieldKey];
+        for (var i = 0; i < inputs.length; i++) {
+          var inp = inputs[i];
+          var name = (inp.name || '').toLowerCase();
+          var id_attr = (inp.id || '').toLowerCase();
+          
+          for (var j = 0; j < matchers.length; j++) {
+            if (name.includes(matchers[j]) || id_attr.includes(matchers[j])) {
+              inp.value = String(value).trim();
+              inp.dispatchEvent(new Event('input', { bubbles: true }));
+              inp.dispatchEvent(new Event('change', { bubbles: true }));
+              filled++;
+              console.log('Filled ' + fieldKey + ' -> ' + inp.name);
+              break;
+            }
+          }
+        }
+      }
+      console.log('Total filled: ' + filled);
+    } catch(e) {
+      console.log('Cannot fill iframe (cross-origin): ' + e.message);
+    }
+  }, 1000);
+}
+
+function submitToPardot(id) {
+  var rec = state.records.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  
+  if (!rec.email || !rec.email.trim()) {
+    alert('Email is required');
+    return;
+  }
+  
+  if (!confirm('Submit to Pardot?\n\nEmail: ' + rec.email + '\nCompany: ' + (rec.Company || '-') + '\nName: ' + (rec.Name || '-'))) return;
+  
+  var formHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Submitting...</title></head>';
+  formHtml += '<body style="font-family:Arial;padding:40px;text-align:center">';
+  formHtml += '<h2 style="color:#1d4ed8">Submitting to Pardot...</h2>';
+  formHtml += '<p>Please wait</p>';
+  formHtml += '<form id="f" method="POST" action="https://go.rifeng.com/l/900071/2026-03-18/3t99mv">';
+  
+  for (var internalField in CONFIG.FIELD_MAP) {
+    var pardotField = CONFIG.FIELD_MAP[internalField];
+    var value = rec[internalField];
+    if (value && String(value).trim()) {
+      formHtml += '<input type="hidden" name="' + pardotField + '" value="' + String(value).replace(/"/g, '&quot;') + '">';
+    }
+  }
+  
+  formHtml += '</form>';
+  formHtml += '<script>document.getElementById("f").submit();<' + '/script>';
+  formHtml += '</body></html>';
+  
+  var blob = new Blob([formHtml], { type: 'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+  
+  setTimeout(function() {
+    state.records = state.records.filter(function(r) { return r.id !== id; });
+    renderRecords();
+    showToast('Submitted! Record deleted.');
+  }, 1500);
+}
+
+function deleteRecord(id) {
+  if (!confirm('Delete this record?')) return;
+  state.records = state.records.filter(function(r) { return r.id !== id; });
+  renderRecords();
+  showToast('Deleted');
+}
+
+document.getElementById('file-input').value = '';
+document.getElementById('camera-input').value = '';
+document.getElementById('gallery-input').value = '';
+</script>
+</body>
+</html>
