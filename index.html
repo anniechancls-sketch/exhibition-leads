@@ -1,28 +1,36 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>展会客户信息识别与整理</title>
+  <title>RIIFO LeadCapture AI</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; min-height: 100vh; }
-    .header { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; padding: 16px; position: sticky; top: 0; z-index: 20; }
-    .header h1 { font-size: 18px; font-weight: bold; }
-    .header button { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; font-size: 16px; }
-    .nav { background: white; display: flex; border-bottom: 1px solid #e2e8f0; position: sticky; top: 60px; z-index: 20; }
-    .nav button { flex: 1; padding: 12px; background: none; border: none; font-size: 14px; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; }
-    .nav button.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0D0D0D; min-height: 100vh; color: #fff; }
+    .nav { background: #1A1A1A; border-bottom: 1px solid #e5e5e5; }
+    .page { background: #0D0D0D; min-height: calc(100vh - 60px); }
+    .upload-zone { background: #1A1A1A; border-color: #444; }
+    .upload-zone p { color: #ccc; }
+    .upload-zone span { color: #888; }
+    .header { background: #1A1A1A; color: #ED2939; padding: 16px; position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { display: none; }
+    .logo-text { font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #ED2939; }
+    
+    .header button { background: #0D0D0D; border: none; border-radius: 8px; padding: 8px 12px; color: #ED2939; cursor: pointer; font-size: 16px; }
+    .nav { background: #1A1A1A; display: flex; border-bottom: 1px solid #e5e5e5; position: sticky; top: 60px; z-index: 20; }
+    .nav button { flex: 1; padding: 12px; background: none; border: none; font-size: 14px; font-weight: 500; color: #808080; border-bottom: 2px solid transparent; cursor: pointer; }
+    .nav button.active { color: #ED2939; border-bottom-color: #ED2939; }
     .page { padding: 16px; display: none; }
     .page.active { display: block; }
-    .upload-zone { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; background: white; margin-bottom: 16px; }
+    .upload-zone { border: 2px dashed #444; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; background: #1A1A1A; margin-bottom: 16px; }
     .upload-zone .icon { font-size: 48px; margin-bottom: 8px; }
-    .upload-zone p { color: #475569; font-weight: 500; }
-    .upload-zone span { color: #94a3b8; font-size: 13px; display: block; margin-top: 4px; }
+    .upload-zone p { color: #808080; font-weight: 500; }
+    .upload-zone span { color: #606060; font-size: 13px; display: block; margin-top: 4px; }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; border: none; font-size: 14px; transition: opacity 0.15s; }
     .btn:active { opacity: 0.8; }
-    .btn-primary { background: #1d4ed8; color: white; }
-    .btn-secondary { background: white; color: #475569; border: 1px solid #e2e8f0; }
+    .btn-primary { background: #ED2939; color: white; }
+    .btn-secondary { background: #0D0D0D; color: #ccc; border: 1px solid #333; }
     .btn-success { background: #16a34a; color: white; }
     .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
     .btn-sm { padding: 6px 10px; font-size: 13px; }
@@ -31,9 +39,9 @@
     .hidden { display: none !important; }
 
     /* 客户卡片 */
-    .customer-card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
-    .card-header { background: linear-gradient(135deg, #1d4ed8, #1e40af); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-    .card-header .title { font-weight: 600; font-size: 15px; }
+    .customer-card { background: #1A1A1A; border-radius: 12px; box-shadow: 0 2px 12px rgba(237,41,57,0.15); margin-bottom: 20px; overflow: hidden; border: 1px solid #333; }
+    .card-header { background: linear-gradient(135deg, #C41E30, #8B0000); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .card-header .title { font-weight: 600; font-size: 15px; color: white; }
     .card-header .badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 8px; }
     .card-body { padding: 16px; }
 
@@ -41,20 +49,20 @@
     .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .field-item { display: flex; flex-direction: column; gap: 4px; }
     .field-item.full { grid-column: 1 / -1; }
-    .field-item label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-item label { font-size: 12px; font-weight: 600; color: #808080; text-transform: uppercase; letter-spacing: 0.5px; }
     .field-item label .req { color: #ef4444; margin-left: 2px; }
     .field-item input, .field-item textarea, .field-item select {
-      padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px;
-      background: #f8fafc; transition: border-color 0.15s; width: 100%;
+      padding: 9px 12px; border: 1.5px solid #444; border-radius: 8px; font-size: 14px;
+      background: #1A1A1A; transition: border-color 0.15s; width: 100%; color: #fff;
     }
     .field-item input:focus, .field-item textarea:focus, .field-item select:focus {
-      outline: none; border-color: #3b82f6; background: white;
+      outline: none; border-color: #ED2939; background: #1A1A1A;
     }
     .field-item textarea { resize: vertical; min-height: 80px; }
 
     /* 제출 영역 */
-    .card-footer { padding: 12px 16px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px; }
-    .card-footer p { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 6px; }
+    .card-footer { padding: 12px 16px; border-top: 1px solid #333; display: flex; gap: 10px; }
+    .card-footer p { font-size: 11px; color: #888; text-align: center; margin-top: 6px; }
 
     /* 图片预览 */
     .img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
@@ -63,35 +71,35 @@
     .img-item .del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 14px; cursor: pointer; line-height: 22px; text-align: center; }
 
     /* 空状态 */
-    .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #606060; }
     .empty-state .icon { font-size: 56px; margin-bottom: 12px; }
 
     /* Loading */
     .loading { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; }
     .loading.show { display: flex; }
-    .loading-box { background: white; padding: 32px; border-radius: 16px; text-align: center; max-width: 280px; width: 90%; }
+    .loading-box { background: #1A1A1A; padding: 32px; border-radius: 16px; text-align: center; max-width: 280px; width: 90%; }
     .loading-box .icon { font-size: 48px; margin-bottom: 12px; }
     .loading-box p { font-weight: 600; font-size: 16px; }
-    .loading-box .sub { color: #64748b; font-size: 13px; margin-top: 4px; }
+    .loading-box .sub { color: #808080; font-size: 13px; margin-top: 4px; }
     .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 16px; }
-    .progress-bar div { height: 100%; background: #3b82f6; transition: width 0.3s; width: 0; }
+    .progress-bar div { height: 100%; background: #FF4D5E; transition: width 0.3s; width: 0; }
 
     /* Toast */
     .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; white-space: nowrap; }
     .toast.show { display: block; }
 
     /* 设置弹窗 */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.show { display: flex; }
-    .modal { background: white; width: 100%; max-width: 480px; border-radius: 16px; overflow: hidden; }
-    .modal-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
-    .modal-header button { background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; }
+    .modal { background: #1A1A1A; width: 100%; max-width: 480px; border-radius: 16px; overflow: hidden; }
+    .modal-header { padding: 16px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #fff; }
+    .modal-header button { background: none; border: none; font-size: 24px; color: #606060; cursor: pointer; }
     .modal-body { padding: 16px; }
-    .modal-footer { padding: 16px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; }
+    .modal-footer { padding: 16px; border-top: 1px solid #333; display: flex; gap: 12px; }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 500; color: #ccc; margin-bottom: 6px; }
     .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
-    .form-tip { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .form-tip { font-size: 12px; color: #606060; margin-top: 4px; }
 
     /* 提交成功状态 */
     .submitted { opacity: 0.5; pointer-events: none; }
@@ -99,7 +107,10 @@
 </head>
 <body>
   <header class="header">
-    <h1>📇 展会客户信息识别</h1>
+    <div class="logo">
+      <div class="logo-icon">R</div>
+      <div class="logo-text">RIIFO LeadCapture AI</div>
+    </div>
     <button onclick="openSettings()">⚙️</button>
   </header>
 
@@ -126,7 +137,7 @@
 
       <div id="preview-section" class="hidden" style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:13px;font-weight:500">已上传 <span id="img-count" style="color:#1d4ed8;font-weight:700">0</span> 张图片</span>
+          <span style="font-size:13px;font-weight:500">已上传 <span id="img-count" style="color:#ED2939;font-weight:700">0</span> 张图片</span>
           <button class="btn btn-sm btn-danger" onclick="clearAll()">清空</button>
         </div>
         <div id="preview-grid" class="img-grid"></div>
@@ -135,8 +146,8 @@
       <button id="btn-recognize" class="btn btn-primary btn-lg w-full hidden" onclick="startRecognize()">🧠 开始识别客户信息</button>
 
       <div style="background:white;border-radius:12px;padding:16px;margin-top:16px;border:1px solid #dbeafe">
-        <h3 style="font-size:14px;font-weight:600;color:#1e40af;margin-bottom:8px">💡 使用说明</h3>
-        <ol style="font-size:13px;color:#1d4ed8;padding-left:20px;line-height:2">
+        <h3 style="font-size:14px;font-weight:600;color:#ED2939;margin-bottom:8px">💡 使用说明</h3>
+        <ol style="font-size:13px;color:#ED2939;padding-left:20px;line-height:2">
           <li>上传名片、Memo 或客户登记表</li>
           <li>AI 自动识别客户信息</li>
           <li>在记录页面检查并编辑字段</li>
