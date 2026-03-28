@@ -196,8 +196,16 @@
         <div class="form-group">
           <label>🤖 识别模型</label>
           <select id="input-model">
-            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash（推荐）</option>
-            <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+            <optgroup label="推荐（高性价比）">
+              <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash（推荐，快速准确）</option>
+              <option value="openai/gpt-5-nano">GPT-5 Nano（OpenAI 超高性价比）</option>
+              <option value="amazon/nova-lite-v1">Amazon Nova Lite（AWS，轻量大模型）</option>
+              <option value="qwen/qwen3.5-flash-02-23">通义千问 3.5 Flash（阿里，高速）</option>
+            </optgroup>
+            <optgroup label="开源免费">
+              <option value="google/gemma-3-27b-it:free">Gemma 3 27B（Google，免费）</option>
+              <option value="meta-llama/llama-3.2-11b-vision-instruct">Llama 3.2 11B Vision（免费）</option>
+            </optgroup>
           </select>
         </div>
         <div class="form-group">
