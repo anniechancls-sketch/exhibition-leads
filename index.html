@@ -31,6 +31,7 @@
     .btn:active { opacity: 0.8; }
     .btn-primary { background: #ED2939; color: white; }
     .btn-secondary { background: #0D0D0D; color: #ccc; border: 1px solid #333; }
+    .batch-bar { padding: 16px; position: sticky; bottom: 0; background: #1A1A1A; border-top: 1px solid #333; z-index: 10; }
     .btn-success { background: #16a34a; color: white; }
     .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
     .btn-sm { padding: 6px 10px; font-size: 13px; }
@@ -163,6 +164,9 @@
         <button class="btn btn-primary" style="margin-top:12px" onclick="switchTab('upload')">去上传图片</button>
       </div>
       <div id="records-list"></div>
+      <div id="batch-bar" class="batch-bar" style="display:none">
+        <button class="btn btn-primary" onclick="submitAll()">📮 全部提交到 Pardot</button>
+      </div>
     </section>
   </main>
 
@@ -460,8 +464,10 @@ function renderRecords() {
   var empty = document.getElementById('records-empty');
   var list = document.getElementById('records-list');
   var countEl = document.getElementById('record-count');
-  if (!state.records.length) { empty.style.display = 'block'; list.innerHTML = ''; countEl.textContent = ''; return; }
+  var batchBar = document.getElementById('batch-bar');
+  if (!state.records.length) { empty.style.display = 'block'; list.innerHTML = ''; countEl.textContent = ''; batchBar.style.display = 'none'; return; }
   empty.style.display = 'none';
+  batchBar.style.display = state.records.length > 1 ? 'block' : 'none';
   countEl.textContent = '(' + state.records.length + ')';
 
   var typeOpts = PARDOT.TYPE_OPTIONS.map(function(o) {
@@ -523,12 +529,9 @@ function renderRecords() {
   });
 }
 
-// ===== 提交到 Pardot =====
-function submitRecord(id) {
+function getRecordData(id) {
   var rec = state.records.find(function(r) { return r.id === id; });
-  if (!rec) return;
-
-  // 读取最新编辑值
+  if (!rec) return null;
   var fields = ['Name','Company','email','Title','Nation','Continent','Phone','Mobile','Website','InterestedIn','Address','DemandDetails'];
   fields.forEach(function(f) {
     var el = document.getElementById('f-' + id + '-' + f);
@@ -536,39 +539,88 @@ function submitRecord(id) {
   });
   var typeEl = document.getElementById('f-' + id + '-TypeOfClients');
   var salesEl = document.getElementById('f-' + id + '-salesman');
-  var typeValue = typeEl ? typeEl.value : '';
-  var salesValue = salesEl ? salesEl.value : '';
+  rec._typeValue = typeEl ? typeEl.value : '';
+  rec._salesValue = salesEl ? salesEl.value : '';
+  return rec;
+}
 
-  if (!rec.email || !rec.email.trim()) { alert('❌ 邮箱为必填字段'); return; }
-
-  if (!confirm('确认提交到 Pardot？\n\n📧 ' + rec.email + '\n🏢 ' + (rec.Company || '-') + '\n👤 ' + (rec.Name || '-'))) return;
-
-  // 构建 POST 表单并在新窗口提交
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>';
+function doSubmitOne(rec, onDone) {
+  if (!rec.email || !rec.email.trim()) {
+    showToast('❌ 客户' + (state.records.indexOf(rec) + 1) + ' 邮箱为空，已跳过');
+    onDone(false);
+    return;
+  }
+  var textFields = { Name: rec.Name, Company: rec.Company, email: rec.email, Website: rec.Website, Title: rec.Title, Nation: rec.Nation, Continent: rec.Continent, Address: rec.Address, Phone: rec.Phone, Mobile: rec.Mobile, InterestedIn: rec.InterestedIn, DemandDetails: rec.DemandDetails };
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Submit</title></head><body>';
   html += '<form id="f" method="POST" action="' + PARDOT.FORM_URL + '">';
   html += '<input type="hidden" name="_utf8" value="&#9731;">';
-
-  var textFields = { Name: rec.Name, Company: rec.Company, email: rec.email, Website: rec.Website, Title: rec.Title, Nation: rec.Nation, Continent: rec.Continent, Address: rec.Address, Phone: rec.Phone, Mobile: rec.Mobile, InterestedIn: rec.InterestedIn, DemandDetails: rec.DemandDetails };
   for (var f in textFields) {
     var v = textFields[f];
     if (v && String(v).trim()) {
       html += '<input type="hidden" name="' + PARDOT.FIELDS[f] + '" value="' + String(v).replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">';
     }
   }
-  if (typeValue) html += '<input type="hidden" name="' + PARDOT.FIELDS.TypeOfClients + '" value="' + typeValue + '">';
-  if (salesValue) html += '<input type="hidden" name="' + PARDOT.FIELDS.salesman + '" value="' + salesValue + '">';
-
+  if (rec._typeValue) html += '<input type="hidden" name="' + PARDOT.FIELDS.TypeOfClients + '" value="' + rec._typeValue + '">';
+  if (rec._salesValue) html += '<input type="hidden" name="' + PARDOT.FIELDS.salesman + '" value="' + rec._salesValue + '">';
   html += '</form><script>document.getElementById("f").submit();<' + '/script></body></html>';
+  var win = window.open('', '_blank');
+  if (!win) { alert('请允许弹出窗口'); onDone(false); return; }
+  win.document.write(html);
+  win.document.close();
+  onDone(true);
+}
 
-  var blob = new Blob([html], { type: 'text/html' });
-  window.open(URL.createObjectURL(blob), '_blank');
+function submitAll() {
+  if (!state.records.length) { showToast('暂无记录可提交'); return; }
+  var total = state.records.length;
+  var idx = 0;
+  var success = 0;
+  var skipped = 0;
+  var totalEmails = state.records.filter(function(r) { return r.email && r.email.trim(); }).length;
+  if (!confirm('确认批量提交 ' + total + ' 条客户信息到 Pardot？\n（其中 ' + totalEmails + ' 条有邮箱）\n\n将依次提交客户信息，全部提交完成后请确认提交结果，如有问题请按提示修改后重新提交！。')) return;
+  showToast('开始批量提交... 第 1/' + total);
+  function next() {
+    if (idx >= state.records.length) {
+      showToast('✅ 批量提交完成！成功 ' + success + ' 条，跳过 ' + skipped + ' 条（无邮箱）');
+      return;
+    }
+    var rec = getRecordData(state.records[idx].id);
+    var pos = idx + 1;
+    if (!rec.email || !rec.email.trim()) {
+      skipped++;
+      idx++;
+      next();
+      return;
+    }
+    doSubmitOne(rec, function(ok) {
+      if (ok) success++;
+      idx++;
+      if (idx < state.records.length) {
+        showToast('已提交 ' + pos + '/' + total + '，继续...');
+        setTimeout(next, 500);
+      } else {
+        var remaining = state.records.filter(function(r, i) { return i >= idx || !r.email || !r.email.trim(); });
+        if (success > 0) {
+          showToast('✅ 批量提交完成！成功 ' + success + ' 条，跳过 ' + skipped + ' 条');
+        }
+      }
+    });
+  }
+  next();
+}
 
-  // 标记已提交并删除
-  setTimeout(function() {
-    state.records = state.records.filter(function(r) { return r.id !== id; });
-    renderRecords();
-    showToast('✅ 已提交！记录已删除');
-  }, 1500);
+function submitRecord(id) {
+  var rec = getRecordData(id);
+  if (!rec) return;
+  if (!rec.email || !rec.email.trim()) { alert('❌ 邮箱为必填字段'); return; }
+  if (!confirm('确认提交到 Pardot？\n\n📧 ' + rec.email + '\n🏢 ' + (rec.Company || '-') + '\n👤 ' + (rec.Name || '-'))) return;
+  doSubmitOne(rec, function(ok) {
+    if (ok) {
+      state.records = state.records.filter(function(r) { return r.id !== id; });
+      renderRecords();
+      showToast('✅ 已提交！记录已删除');
+    }
+  });
 }
 
 function deleteRecord(id) {
